@@ -762,6 +762,42 @@ def render_video_manager(df: pd.DataFrame):
         st.info("📁 Nenhum vídeo na pasta `data/videos/` ainda. Grave um vídeo ou use o download acima.")
 
 
+# ── Vendedores Seguidos ───────────────────────────────────────────────────────
+
+def render_followed_sellers():
+    st.markdown('<div class="section-title">🏪 Vendedores Seguidos Automaticamente</div>', unsafe_allow_html=True)
+
+    try:
+        from scraper.seller_follower import get_followed_report
+        report = get_followed_report()
+    except Exception as e:
+        st.caption(f"Módulo de follow ainda não executado: {e}")
+        return
+
+    total = report.get("total", 0)
+    if total == 0:
+        st.info("Nenhum vendedor seguido ainda. Execute o pipeline para começar a seguir automaticamente.")
+        return
+
+    c1, c2, c3 = st.columns(3)
+    c1.metric("🏪 Total de lojas", total)
+    c2.metric("✅ Seguidos pelo bot", report.get("seguidos_pelo_bot", 0))
+    c3.metric("👤 Já seguia antes", report.get("ja_seguia_antes", 0))
+
+    vendedores = report.get("vendedores", [])
+    novos = [v for v in vendedores if v.get("status") == "seguido"]
+
+    if novos:
+        with st.expander(f"🆕 Ver {len(novos)} lojas seguidas pelo bot"):
+            for v in novos[:30]:
+                nome = v.get("nome", "Loja")
+                url = v.get("url", "")
+                col_a, col_b = st.columns([3, 1])
+                col_a.markdown(f"🏪 **{nome}**")
+                if url:
+                    col_b.markdown(f"[Ver loja]({url})")
+
+
 # ── Log Viewer ────────────────────────────────────────────────────────────────
 
 def render_log_viewer():
@@ -799,6 +835,8 @@ def main():
     render_charts(df)
     st.markdown("---")
     render_video_manager(df)
+    st.markdown("---")
+    render_followed_sellers()
     st.markdown("---")
     render_manual_queue()
     st.markdown("---")

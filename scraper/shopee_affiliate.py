@@ -705,6 +705,25 @@ async def scrape_all_products(settings) -> list:
             enriched.append(product)
             await _delay(1, 2)
 
+        # ── Auto-follow dos vendedores (se habilitado) ────────────────────────
+        auto_follow = getattr(settings, "auto_follow_sellers", True)
+        if auto_follow and enriched:
+            logger.info("Iniciando auto-follow dos vendedores...")
+            try:
+                from scraper.seller_follower import follow_sellers_from_products
+                max_follows = getattr(settings, "max_follows_per_run", 50)
+                follow_stats = await follow_sellers_from_products(
+                    page=page,
+                    products=enriched,
+                    max_follows=max_follows,
+                )
+                logger.info(
+                    f"Follow concluído: {follow_stats.get('seguido', 0)} novos | "
+                    f"{follow_stats.get('ja_seguindo', 0)} já seguia"
+                )
+            except Exception as e:
+                logger.warning(f"Auto-follow falhou (não crítico): {e}")
+
         return enriched
 
     finally:

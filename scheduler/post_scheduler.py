@@ -282,18 +282,55 @@ def write_manual_queue(product: dict, queue_path: str = "data/manual_queue.json"
 
 def dispatch_post_job(settings, excel_lock: threading.Lock):
     """Called by APScheduler at each scheduled time."""
-    logger.info("Scheduler: executando job de postagem...")
-    products = _read_pending_products(settings.EXCEL_PATH, excel_lock, limit=2)
+    logger.info("=" * 50)
+    logger.info(f"Scheduler: executando job — {datetime.now().strftime('%d/%m %H:%M')}")
+
+    # 1) Roda o pipeline completo (scraping + copy IA)
+    try:
+        import subprocess, sys
+        logger.info("Iniciando pipeline automatico...")
+        result = subprocess.run(
+            [sys.executable, "main.py"],
+            capture_output=True, text=True, timeout=1800,  # 30 min timeout
+            cwd=str(Path(__file__).parent.parent)
+        )
+        if result.returncode == 0:
+            logger.info("Pipeline executado com sucesso!")
+        else:
+            logger.error(f"Pipeline falhou: {result.stderr[-500:]}")
+    except subprocess.TimeoutExpired:
+        logger.error("Pipeline timeout (30 min). Abortando.")
+        return
+    except Exception as e:
+        logger.error(f"Erro ao rodar pipeline: {e}")
+
+    # 2) Lê produtos pendentes para postar
+    whatsapp_phone = getattr(settings, "whatsapp_phone", "")
+    products = _read_pending_products(settings.EXCEL_PATH, excel_lock, limit=10)
 
     if not products:
         logger.info("Nenhum produto pendente para postar.")
         return
 
+    logger.info(f"{len(products)} produtos prontos.")
+
+    # 3) Notificação WhatsApp com copy pronto
+    if whatsapp_phone:
+        try:
+            from scheduler.notifier import notify_products_ready
+            logger.info(f"Enviando notificação WhatsApp para {whatsapp_phone}...")
+            notify_products_ready(products, whatsapp_phone, max_messages=5)
+        except Exception as e:
+            logger.error(f"Falha na notificação WhatsApp: {e}")
+
+    # 4) Tentativa de postagem automática (se tokens disponíveis)
     for product in products:
         video_path = product.get("video_path", "")
 
-        # TikTok
-        if settings.social_network in ("tiktok", "all"):
+        posted = False
+
+        # TikTok (só se tiver token)
+        if settings.social_network in ("tiktok", "all") and settings.tiktok_access_token:
             result = post_to_tiktok(
                 product=product,
                 video_path=video_path,
@@ -305,12 +342,21 @@ def dispatch_post_job(settings, excel_lock: threading.Lock):
                     settings.EXCEL_PATH, excel_lock,
                     product["link_original"], "publicado_tiktok", "tiktok"
                 )
-            elif result["status"] == "fila_manual":
-                write_manual_queue(product)
+                posted = True
+                if whatsapp_phone:
+                    try:
+                        from scheduler.notifier import notify_simple
+                        nome = product.get("produto", "Produto")[:40]
+                        notify_simple(f"✅ *POSTADO NO TIKTOK!*\n{nome}", whatsapp_phone)
+                    except Exception:
+                        pass
+            elif result["status"] == "failed" and result.get("error") == "token_expired":
+                logger.warning("Token TikTok expirado. Configure TIKTOK_ACCESS_TOKEN no .env")
                 _update_post_status(
                     settings.EXCEL_PATH, excel_lock,
                     product["link_original"], "fila_manual", "tiktok"
                 )
+                write_manual_queue(product)
             else:
                 logger.error(f"TikTok falhou: {result}")
                 _update_post_status(
@@ -318,14 +364,51 @@ def dispatch_post_job(settings, excel_lock: threading.Lock):
                     product["link_original"], "falhou_tiktok", "tiktok"
                 )
 
-        # Shopee Videos
-        if settings.social_network in ("shopee_videos", "all"):
-            ok = post_to_shopee_videos(product, video_path, settings)
-            status = "publicado_shopee" if ok else "falhou_shopee"
+        # ── Shopee Videos (browser automation via CDP) ──────────────────────
+        if not posted:
+            from scheduler.shopee_video_poster import (
+                post_shopee_video, find_video_for_product, mark_video_as_used
+            )
+
+            # Busca vídeo automaticamente na pasta data/videos/
+            if not video_path:
+                video_path = find_video_for_product(product, "data/videos") or ""
+
+            if video_path:
+                logger.info(f"Postando no Shopee Videos: {Path(video_path).name}")
+                shopee_result = post_shopee_video(product, video_path, settings)
+
+                if shopee_result["status"] == "success":
+                    _update_post_status(
+                        settings.EXCEL_PATH, excel_lock,
+                        product["link_original"], "publicado_shopee", "shopee_videos"
+                    )
+                    mark_video_as_used(video_path)
+                    posted = True
+
+                    if whatsapp_phone:
+                        try:
+                            from scheduler.notifier import notify_simple
+                            nome = product.get("produto", "Produto")[:40]
+                            notify_simple(f"✅ *POSTADO NO SHOPEE!*\n📦 {nome}", whatsapp_phone)
+                        except Exception:
+                            pass
+                else:
+                    reason = shopee_result.get("reason", "desconhecido")
+                    logger.error(f"Shopee Video falhou: {reason}")
+                    _update_post_status(
+                        settings.EXCEL_PATH, excel_lock,
+                        product["link_original"], "falhou_shopee", "shopee_videos"
+                    )
+
+        # ── Fila manual: copy pronto, usuário grava e posta ──────────────────
+        if not posted:
+            write_manual_queue(product)
             _update_post_status(
                 settings.EXCEL_PATH, excel_lock,
-                product["link_original"], status, "shopee_videos"
+                product["link_original"], "fila_manual", ""
             )
+            logger.info(f"✍️ Copy na fila manual: {product.get('produto', '')[:50]}")
 
 
 def create_and_start_scheduler(settings, excel_lock: threading.Lock) -> BackgroundScheduler:

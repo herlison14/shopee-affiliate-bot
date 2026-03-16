@@ -1,0 +1,29 @@
+# ── Dependências para uso LOCAL (PC) ──────────────────────────────────────────
+# Instale com: pip install -r requirements_local.txt
+# NÃO use este arquivo no Streamlit Cloud (use requirements.txt)
+
+# Dashboard + visualização
+pandas
+openpyxl
+streamlit>=1.40.0
+plotly
+altair>=5.0.0
+psutil
+
+# Configuração
+python-dotenv
+
+# HTTP
+httpx
+
+# IA
+anthropic
+
+# Browser automation (scraping + WhatsApp)
+playwright
+
+# Agendamento automático
+APScheduler>=3.10.0
+
+# Monitoramento de processos
+psutil

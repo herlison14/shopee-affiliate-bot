@@ -48,6 +48,10 @@ class Settings:
     # Notificações
     whatsapp_phone: str = ""
 
+    # Auto-follow de vendedores
+    auto_follow_sellers: bool = True
+    max_follows_per_run: int = 50
+
     # SubID keys (fixed by Shopee spec)
     SUBID_PRODUCT_KEY: str = "nome_do_produto"
     SUBID_SOCIAL_KEY: str = "rede_social"
@@ -102,6 +106,8 @@ def get_settings() -> Settings:
         min_commission_pct=float(_optional("MIN_COMMISSION_PCT", "5.0")),
         headless=_optional("HEADLESS", "true").lower() != "false",
         whatsapp_phone=_optional("WHATSAPP_PHONE", ""),
+        auto_follow_sellers=_optional("AUTO_FOLLOW_SELLERS", "true").lower() != "false",
+        max_follows_per_run=int(_optional("MAX_FOLLOWS_PER_RUN", "50")),
     )
 
 

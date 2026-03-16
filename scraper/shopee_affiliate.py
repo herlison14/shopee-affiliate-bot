@@ -293,6 +293,17 @@ async def discover_products(
         await page.evaluate("window.scrollTo(0, 0)")
         await _delay(2, 3)
 
+        # ── Detecção de CAPTCHA — volta ao portal se redirecionado ───────────
+        if "verify/captcha" in page.url or "verify/traffic" in page.url:
+            logger.warning(f"CAPTCHA detectado! URL: {page.url[:120]}")
+            logger.warning("Aguardando 30s e tentando novamente...")
+            await _delay(28, 32)
+            await page.goto(target_url, wait_until="networkidle", timeout=30000)
+            await _delay(5, 8)
+            if "verify/captcha" in page.url or "verify/traffic" in page.url:
+                logger.error("CAPTCHA persiste. Resolva manualmente no Chrome e execute novamente.")
+                return []
+
         # Screenshot de debug antes da extração
         await _screenshot(page, "before_extract", screenshots_dir)
         logger.info(f"URL atual: {page.url}")
@@ -310,7 +321,16 @@ async def discover_products(
                     const results = [];
                     const seen = new Set();
 
-                    // Helper: encontra o ancestral mais próximo que contém comissão E link
+                    // Palavras que indicam elemento de UI, não produto real
+                    const UI_BLACKLIST = /^(português|english|español|中文|tiếng việt|bahasa|idioma|language|filtro|filter|categoria|category|ordenar|sort|buscar|search|login|entrar|cadastrar|menu|home|início|voltar|back|próximo|anterior|next|prev|page|página|loading|carregando|erro|error)$/i;
+
+                    // URL de produto real Shopee tem padrão -i.NUMEROS.NUMEROS
+                    function isProductUrl(url) {
+                        return /shopee\\.com\\.br\\/.*-i\\.\\d+\\.\\d+/.test(url) ||
+                               /shopee\\.com\\.br\\/[^\\/]+\\/[^\\/]+-i\\.\\d+/.test(url);
+                    }
+
+                    // Helper: encontra o ancestral mais próximo que contém comissão E link de produto
                     function findCard(startEl, maxLevels) {
                         let el = startEl;
                         for (let i = 0; i < maxLevels; i++) {
@@ -318,10 +338,28 @@ async def discover_products(
                             if (!el) return null;
                             const txt = el.innerText || '';
                             const hasComm = /\\d+[,.]?\\d*\\s*%/.test(txt);
-                            const hasLink = el.querySelector('a[href*="shopee.com.br"]');
-                            if (hasComm && hasLink && txt.length > 30) return el;
+                            const productLink = Array.from(el.querySelectorAll('a[href*="shopee.com.br"]'))
+                                .find(a => isProductUrl(a.href));
+                            if (hasComm && productLink && txt.length > 40) return el;
                         }
                         return null;
+                    }
+
+                    // Extrai nome limpo: ignora linhas de UI, comissão, preço
+                    function extractName(fullText, imgAlt) {
+                        if (imgAlt && imgAlt.length > 10 && !UI_BLACKLIST.test(imgAlt.trim())) {
+                            return imgAlt.trim().substring(0, 150);
+                        }
+                        const lines = fullText.split('\\n')
+                            .map(t => t.trim())
+                            .filter(t =>
+                                t.length > 10 &&
+                                !/^\\d+[,.]?\\d*\\s*%/.test(t) &&
+                                !/^R\\$/.test(t) &&
+                                !UI_BLACKLIST.test(t) &&
+                                !/^\\d+$/.test(t)
+                            );
+                        return lines.length > 0 ? lines[0].substring(0, 150) : '';
                     }
 
                     // ── Estratégia A: via botões "Obter link" ─────────────────
@@ -334,53 +372,53 @@ async def discover_products(
                             if (!card) return;
 
                             const fullText = card.innerText || '';
-                            const links = Array.from(card.querySelectorAll('a[href*="shopee.com.br"]'));
-                            const href = links.length > 0 ? links[0].href : '';
+                            const productLinks = Array.from(card.querySelectorAll('a[href*="shopee.com.br"]'))
+                                .filter(a => isProductUrl(a.href));
+                            const href = productLinks.length > 0 ? productLinks[0].href : '';
                             if (!href || seen.has(href)) return;
 
                             const commMatches = fullText.match(/(\\d+(?:[,.]\\d+)?)\\s*%/g) || [];
-                            const commValues = commMatches.map(m => parseFloat(m.replace('%','').replace(',','.')));
+                            const commValues = commMatches.map(m => parseFloat(m.replace('%','').replace(',','.')))
+                                .filter(v => v > 0 && v <= 80);
                             const commission = commValues.length > 0 ? Math.max(...commValues) : 0;
 
                             const priceMatches = fullText.match(/R\$\s?[\d.,]+/g) || [];
                             const price = priceMatches.length > 0 ? parseFloat(priceMatches[0].replace('R$','').replace(/\./g,'').replace(',','.').trim()) : 0;
 
-                            const lines = fullText.split('\\n').map(t => t.trim()).filter(t => t.length > 8 && !/^\\d+[,.]?\\d*\\s*%/.test(t) && !/^R\\$/.test(t));
-                            const name = lines[0] || 'Produto';
-
-                            if (commission > 0) {
+                            const name = extractName(fullText, '');
+                            if (commission > 0 && name.length > 5) {
                                 seen.add(href);
-                                results.push({ name: name.substring(0, 150), url: href, commission, price });
+                                results.push({ name, url: href, commission, price });
                             }
                         } catch(e) {}
                     });
 
                     // ── Estratégia B: via imagens de produto (img dentro de links) ─
                     if (results.length === 0) {
-                        const imgs = Array.from(document.querySelectorAll('img[src*="shopee"], img[src*="spx"]'));
+                        const imgs = Array.from(document.querySelectorAll('img[src*="shopee"], img[src*="spx"], img[src*="cf.shopee"]'));
                         imgs.forEach(img => {
                             try {
                                 const card = findCard(img, 10);
                                 if (!card) return;
 
                                 const fullText = card.innerText || '';
-                                const links = Array.from(card.querySelectorAll('a[href*="shopee.com.br"]'));
-                                const href = links.length > 0 ? links[0].href : '';
+                                const productLinks = Array.from(card.querySelectorAll('a[href*="shopee.com.br"]'))
+                                    .filter(a => isProductUrl(a.href));
+                                const href = productLinks.length > 0 ? productLinks[0].href : '';
                                 if (!href || seen.has(href)) return;
 
                                 const commMatches = fullText.match(/(\\d+(?:[,.]\\d+)?)\\s*%/g) || [];
-                                const commValues = commMatches.map(m => parseFloat(m.replace('%','').replace(',','.')));
+                                const commValues = commMatches.map(m => parseFloat(m.replace('%','').replace(',','.')))
+                                    .filter(v => v > 0 && v <= 80);
                                 const commission = commValues.length > 0 ? Math.max(...commValues) : 0;
 
                                 const priceMatches2 = fullText.match(/R\$\s?[\d.,]+/g) || [];
                                 const price2 = priceMatches2.length > 0 ? parseFloat(priceMatches2[0].replace('R$','').replace(/\./g,'').replace(',','.').trim()) : 0;
 
-                                const lines = fullText.split('\\n').map(t => t.trim()).filter(t => t.length > 8);
-                                const name = img.alt || lines[0] || 'Produto';
-
-                                if (commission > 0) {
+                                const name = extractName(fullText, img.alt || '');
+                                if (commission > 0 && name.length > 5) {
                                     seen.add(href);
-                                    results.push({ name: name.substring(0, 150), url: href, commission, price: price2 });
+                                    results.push({ name, url: href, commission, price: price2 });
                                 }
                             } catch(e) {}
                         });

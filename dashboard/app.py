@@ -440,30 +440,37 @@ def render_ganho_estimado(df: pd.DataFrame):
 
     df_top = df_top.nlargest(10, "_ganho_calc")
 
+    # Paleta de cores com bom contraste no fundo branco
+    _cores_barras = [
+        "#B71C1C", "#C62828", "#D32F2F", "#E53935",
+        "#EE4D2D", "#F4511E", "#F57C00", "#FF8F00",
+        "#FFA000", "#FFB300",
+    ]
+    _n = len(df_top)
+    _cores = _cores_barras[:_n][::-1]  # mais escuro = maior ganho
+
     fig = go.Figure()
     fig.add_trace(go.Bar(
-        y=df_top["produto"].str[:40],
+        y=df_top["produto"].str[:45],
         x=df_top["_ganho_calc"],
         orientation="h",
-        marker=dict(
-            color=df_top["_ganho_calc"],
-            colorscale=[[0, "#FFD0C5"], [0.5, "#FF7337"], [1, "#EE4D2D"]],
-            showscale=False,
-        ),
-        text=[f"R$ {v:,.2f}/dia" for v in df_top["_ganho_calc"]],
+        marker=dict(color=_cores, line=dict(color="rgba(0,0,0,0.08)", width=1)),
+        text=[f"R$ {v:,.2f}" for v in df_top["_ganho_calc"]],
         textposition="outside",
+        textfont=dict(color="#1A1A2E", size=11, family="sans-serif"),
         hovertemplate="<b>%{y}</b><br>Ganho estimado: R$ %{x:,.2f}/dia<extra></extra>",
     ))
     fig.update_layout(
-        height=400,
-        margin=dict(l=0, r=80, t=10, b=0),
+        height=420,
+        margin=dict(l=10, r=100, t=10, b=10),
         xaxis_title="Ganho estimado (R$/dia)",
-        yaxis=dict(autorange="reversed"),
-        plot_bgcolor="white",
+        yaxis=dict(autorange="reversed", tickfont=dict(color="#1A1A2E", size=11)),
+        xaxis=dict(tickfont=dict(color="#555"), title_font=dict(color="#555")),
+        plot_bgcolor="#FAFAFA",
         paper_bgcolor="white",
-        font=dict(family="sans-serif", size=12),
+        font=dict(family="sans-serif", size=12, color="#1A1A2E"),
     )
-    fig.update_xaxes(gridcolor="#F0F0F0", showgrid=True)
+    fig.update_xaxes(gridcolor="#E8E8E8", showgrid=True, zeroline=False)
     st.plotly_chart(fig, use_container_width=True)
 
     # Cenários de ganho
@@ -548,11 +555,26 @@ def render_charts(df: pd.DataFrame):
                 title="Status dos Produtos",
                 color="Status",
                 color_discrete_map={k: v for k, v in STATUS_COLORS.items()},
-                hole=0.4,
+                hole=0.45,
             )
-            fig.update_layout(height=300, margin=dict(t=40, b=0, l=0, r=0),
-                              legend=dict(orientation="h", yanchor="bottom", y=-0.3))
-            fig.update_traces(textposition='inside', textinfo='percent+label')
+            fig.update_layout(
+                height=300,
+                margin=dict(t=40, b=10, l=0, r=0),
+                paper_bgcolor="white",
+                plot_bgcolor="white",
+                font=dict(color="#1A1A2E", size=11),
+                title_font=dict(color="#1A1A2E", size=13),
+                legend=dict(
+                    orientation="h", yanchor="bottom", y=-0.35,
+                    font=dict(color="#1A1A2E", size=10),
+                ),
+            )
+            fig.update_traces(
+                textposition="auto",
+                textinfo="percent",
+                textfont=dict(color="white", size=12),
+                pull=[0.03] * len(status_counts),
+            )
             st.plotly_chart(fig, use_container_width=True)
 
     with col2:
@@ -561,14 +583,22 @@ def render_charts(df: pd.DataFrame):
                 df,
                 x="comissao_novo",
                 nbins=15,
-                title="Distribuição de Comissão",
-                labels={"comissao_novo": "Comissão (%)"},
+                title="Distribuição de Comissão (%)",
+                labels={"comissao_novo": "Comissão (%)", "count": "Qtd"},
                 color_discrete_sequence=["#EE4D2D"],
             )
-            fig2.update_layout(height=300, margin=dict(t=40, b=0, l=0, r=0),
-                               plot_bgcolor="white", paper_bgcolor="white")
-            fig2.update_xaxes(gridcolor="#F0F0F0")
-            fig2.update_yaxes(gridcolor="#F0F0F0")
+            fig2.update_layout(
+                height=300,
+                margin=dict(t=40, b=0, l=0, r=0),
+                plot_bgcolor="#FAFAFA",
+                paper_bgcolor="white",
+                font=dict(color="#1A1A2E", size=11),
+                title_font=dict(color="#1A1A2E", size=13),
+                xaxis=dict(tickfont=dict(color="#333"), title_font=dict(color="#555")),
+                yaxis=dict(tickfont=dict(color="#333"), title_font=dict(color="#555")),
+            )
+            fig2.update_xaxes(gridcolor="#E8E8E8", showgrid=True)
+            fig2.update_yaxes(gridcolor="#E8E8E8", showgrid=True)
             st.plotly_chart(fig2, use_container_width=True)
 
     with col3:
@@ -581,10 +611,23 @@ def render_charts(df: pd.DataFrame):
                     fig3 = px.bar(
                         pub_por_dia, x="data", y="Posts",
                         title="Posts por Dia",
-                        color_discrete_sequence=["#EE4D2D"],
+                        labels={"data": "Data", "Posts": "Publicações"},
+                        color_discrete_sequence=["#D32F2F"],
+                        text="Posts",
                     )
-                    fig3.update_layout(height=300, margin=dict(t=40, b=0, l=0, r=0),
-                                       plot_bgcolor="white", paper_bgcolor="white")
+                    fig3.update_layout(
+                        height=300,
+                        margin=dict(t=40, b=0, l=0, r=0),
+                        plot_bgcolor="#FAFAFA",
+                        paper_bgcolor="white",
+                        font=dict(color="#1A1A2E", size=11),
+                        title_font=dict(color="#1A1A2E", size=13),
+                        xaxis=dict(tickfont=dict(color="#333"), title_font=dict(color="#555")),
+                        yaxis=dict(tickfont=dict(color="#333"), title_font=dict(color="#555")),
+                    )
+                    fig3.update_traces(textfont=dict(color="#1A1A2E", size=11), textposition="outside")
+                    fig3.update_xaxes(gridcolor="#E8E8E8")
+                    fig3.update_yaxes(gridcolor="#E8E8E8")
                     st.plotly_chart(fig3, use_container_width=True)
                 except Exception:
                     st.caption("Ainda sem histórico de publicações.")

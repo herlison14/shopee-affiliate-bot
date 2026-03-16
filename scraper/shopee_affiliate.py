@@ -21,33 +21,37 @@ logger = logging.getLogger(__name__)
 
 # ── DOM Selectors (update here if Shopee changes their frontend) ────────────
 SELECTORS = {
-    # Login page
-    "login_email": "input[name='loginKey']",
-    "login_password": "input[name='password']",
+    # Login page (shopee.com.br/buyer/login)
+    "login_email": "input[name='loginKey'], input[type='text'], input[type='email']",
+    "login_password": "input[name='password'], input[type='password']",
     "login_submit": "button[type='submit']",
-    "otp_input": "input[placeholder*='OTP'], input[placeholder*='código']",
-    "dashboard_indicator": "[class*='sidebar'], [class*='dashboard'], nav",
+    "otp_input": "input[placeholder*='OTP'], input[placeholder*='código'], input[placeholder*='verificação']",
+    "dashboard_indicator": ".sidebar-menu, nav, [class*='affiliate'], [class*='dashboard'], .shopee-header",
 
-    # Product discovery
-    "product_list_item": "[class*='product-item'], [class*='ProductItem']",
-    "product_name": "[class*='product-name'], [class*='ProductName']",
-    "product_link": "a[href*='shopee.com.br']",
-    "commission_badge": "[class*='commission'], [class*='Commission']",
-    "pagination_next": "button[aria-label*='next'], [class*='next-page']",
+    # Product discovery (affiliate.shopee.com.br/offer/product_offer)
+    "product_list_item": ".product-item, [class*='product-item'], [class*='offer-item']",
+    "product_name": ".product-name, [class*='product-name'], [class*='item-name']",
+    "product_link": "a[href*='shopee.com.br/']",
+    "commission_badge": ".commission-rate, [class*='commission-rate'], [class*='Taxa de comissão']",
+    "get_link_btn": "button:has-text('Obter link'), button:has-text('Obter Link')",
+    "pagination_next": "button[aria-label*='next'], .next-page, li.ant-pagination-next button",
 
-    # Link generation form
-    "custom_link_menu": "a[href*='custom-link'], [class*='custom-link']",
-    "link_input": "input[placeholder*='link'], input[placeholder*='URL']",
-    "subid1_input": "input[placeholder*='SubID 1'], input[name*='subId1']",
-    "subid2_input": "input[placeholder*='SubID 2'], input[name*='subId2']",
-    "subid3_input": "input[placeholder*='SubID 3'], input[name*='subId3']",
-    "generate_btn": "button:has-text('Gerar'), button:has-text('Obter Link')",
-    "copy_link_result": "input[readonly], [class*='result-link']",
+    # Link personalizado (affiliate.shopee.com.br/offer/custom_link)
+    "custom_link_menu": "a[href*='custom_link'], .sidebar-menu a:has-text('Link personalizado')",
+    "link_input": "textarea",
+    "subid1_input": "input[placeholder*='Calçados Esportivos']",
+    "subid2_input": "input[placeholder*='InstagramFeed']",
+    "subid3_input": "input[placeholder*='BirthdaySale']",
+    "generate_btn": "button:has-text('Obter link')",
+    "copy_link_result": "input[readonly], [class*='result'], [class*='link-result']",
+
+    # Campanhas (affiliate.shopee.com.br/campaign/campaign_list)
+    "campaign_list_url": "campaign/campaign_list",
 
     # Commission details
     "view_details_btn": "button:has-text('Ver Detalhes'), button:has-text('Ver Mais')",
-    "commission_new": "[class*='new-buyer'], [class*='newBuyer']",
-    "commission_existing": "[class*='existing-buyer'], [class*='existingBuyer']",
+    "commission_new": "[class*='new-buyer'], [class*='newBuyer'], [class*='novo']",
+    "commission_existing": "[class*='existing-buyer'], [class*='existingBuyer'], [class*='atual']",
 }
 
 USER_AGENT = (
@@ -113,9 +117,12 @@ async def login(
             return True
         logger.warning("Sessão expirada, fazendo login novamente...")
 
-    # Fresh login
-    await page.goto(f"{affiliate_url}/login", wait_until="networkidle", timeout=30000)
-    await _delay()
+    # Fresh login — navega para o portal que redireciona para shopee.com.br/buyer/login
+    await page.goto(affiliate_url, wait_until="networkidle", timeout=30000)
+    await _delay(2, 4)
+    # Se redirecionou para login da Shopee, aguarda a página carregar
+    if "buyer/login" in page.url or "login" in page.url:
+        logger.info("Redirecionado para página de login da Shopee...")
 
     for attempt in range(3):
         try:
@@ -184,7 +191,7 @@ async def discover_products(
 
     try:
         await page.goto(
-            f"{affiliate_url}/offer/product-offer",
+            f"{affiliate_url}/offer/product_offer",
             wait_until="networkidle",
             timeout=30000,
         )
@@ -305,7 +312,7 @@ async def get_affiliate_link(
     """
     try:
         await page.goto(
-            f"{affiliate_url}/tool/custom-link",
+            f"{affiliate_url}/offer/custom_link",
             wait_until="networkidle",
             timeout=30000,
         )

@@ -1,0 +1,7 @@
+.env
+data/.shopee_session.json
+data/output.xlsx
+logs/
+__pycache__/
+*.pyc
+.DS_Store

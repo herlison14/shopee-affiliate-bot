@@ -9,6 +9,11 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+# ── Garante que a raiz do projeto está no sys.path ────────────────────────────
+_PROJECT_ROOT = Path(__file__).parent.parent.resolve()
+if str(_PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_PROJECT_ROOT))
+
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go

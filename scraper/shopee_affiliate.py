@@ -71,21 +71,71 @@ async def _delay(min_s: float = 0.5, max_s: float = 2.5):
 
 
 async def _screenshot(page: Page, name: str, screenshots_dir: str):
-    """Save a debug screenshot."""
-    Path(screenshots_dir).mkdir(parents=True, exist_ok=True)
-    path = os.path.join(screenshots_dir, f"{name}.png")
-    await page.screenshot(path=path)
-    logger.debug(f"Screenshot salvo: {path}")
+    """Save a debug screenshot (silently ignores errors if page is closed)."""
+    try:
+        Path(screenshots_dir).mkdir(parents=True, exist_ok=True)
+        path = os.path.join(screenshots_dir, f"{name}.png")
+        await page.screenshot(path=path)
+        logger.debug(f"Screenshot salvo: {path}")
+    except Exception as e:
+        logger.debug(f"Screenshot ignorado ({name}): {e}")
+
+
+_cdp_mode = False  # Flag global: True quando conectado via CDP (não fechar o browser ao terminar)
 
 
 async def launch_browser(headless: bool = True):
-    """Launch Playwright Chromium with anti-detection settings."""
+    """Conecta ao Chrome existente via CDP ou lança novo com anti-detection."""
+    global _cdp_mode
     playwright = await async_playwright().start()
-    browser = await playwright.chromium.launch(headless=headless)
-    context = await browser.new_context(user_agent=USER_AGENT)
-    await context.add_init_script(
-        "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
+    try:
+        # Tenta conectar ao Chrome existente com remote debugging na porta 9222
+        browser = await playwright.chromium.connect_over_cdp("http://localhost:9222")
+        logger.info("Conectado ao Chrome existente via CDP!")
+        context = browser.contexts[0] if browser.contexts else await browser.new_context()
+        # Encontra a aba já aberta no affiliate.shopee.com.br ou abre nova
+        page = None
+        for p in context.pages:
+            if "affiliate.shopee.com.br" in p.url:
+                page = p
+                logger.info(f"Usando aba existente: {p.url}")
+                break
+        if not page:
+            page = context.pages[0] if context.pages else await context.new_page()
+        _cdp_mode = True
+        return playwright, browser, context, page
+    except Exception:
+        logger.info("Chrome CDP não disponível, iniciando novo navegador...")
+        _cdp_mode = False
+
+    try:
+        browser = await playwright.chromium.launch(
+            channel="chrome",
+            headless=False,
+            args=[
+                "--disable-blink-features=AutomationControlled",
+                "--no-sandbox",
+                "--disable-infobars",
+                "--start-maximized",
+            ]
+        )
+    except Exception:
+        browser = await playwright.chromium.launch(
+            headless=False,
+            args=["--disable-blink-features=AutomationControlled", "--no-sandbox"]
+        )
+
+    context = await browser.new_context(
+        user_agent=USER_AGENT,
+        viewport={"width": 1366, "height": 768},
+        locale="pt-BR",
+        timezone_id="America/Sao_Paulo",
     )
+    await context.add_init_script("""
+        Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
+        Object.defineProperty(navigator, 'plugins', {get: () => [1, 2, 3]});
+        window.chrome = { runtime: {} };
+    """)
     page = await context.new_page()
     return playwright, browser, context, page
 
@@ -124,6 +174,32 @@ async def login(
     if "buyer/login" in page.url or "login" in page.url:
         logger.info("Redirecionado para página de login da Shopee...")
 
+    # Modo manual: aguarda o usuário fazer login completo no navegador (incluindo CAPTCHA)
+    if not headless:
+        logger.info("=" * 60)
+        logger.info("AÇÃO NECESSÁRIA: Faça login manualmente no navegador!")
+        logger.info("1. Preencha email e senha")
+        logger.info("2. Resolva o CAPTCHA se aparecer")
+        logger.info("3. Complete o OTP/SMS se pedir")
+        logger.info("Aguardando até 3 minutos...")
+        logger.info("=" * 60)
+        try:
+            # Aguarda até 10 minutos para o usuário completar login + CAPTCHA + OTP
+            await page.wait_for_url(
+                "**/affiliate.shopee.com.br/**",
+                timeout=600000
+            )
+            await _delay(2, 3)
+            if await _is_logged_in(page):
+                storage = await context.storage_state()
+                Path(session_path).parent.mkdir(parents=True, exist_ok=True)
+                Path(session_path).write_text(json.dumps(storage))
+                logger.info("Login realizado e sessão salva!")
+                return True
+        except Exception as e:
+            logger.error(f"Tempo esgotado esperando login manual: {e}")
+            return False
+
     for attempt in range(3):
         try:
             await page.fill(SELECTORS["login_email"], email)
@@ -144,13 +220,11 @@ async def login(
                         "Configure HEADLESS=false no .env para o primeiro login com OTP."
                     )
                 logger.info("OTP detectado. Aguardando inserção manual no navegador...")
-                # Wait up to 60s for manual OTP entry
                 await page.wait_for_selector(
-                    SELECTORS["dashboard_indicator"], timeout=60000
+                    SELECTORS["dashboard_indicator"], timeout=120000
                 )
 
             if await _is_logged_in(page):
-                # Save session
                 storage = await context.storage_state()
                 Path(session_path).parent.mkdir(parents=True, exist_ok=True)
                 Path(session_path).write_text(json.dumps(storage))
@@ -189,49 +263,180 @@ async def discover_products(
     products = []
     logger.info(f"Descobrindo produtos (máx: {max_products}, comissão mín: {min_commission_pct}%)...")
 
+    target_url = f"{affiliate_url}/offer/product_offer"
+
     try:
-        await page.goto(
-            f"{affiliate_url}/offer/product_offer",
-            wait_until="networkidle",
-            timeout=30000,
-        )
-        await _delay(2, 4)
+        # Navega apenas se não estiver já na página correta
+        if target_url not in page.url:
+            await page.goto(target_url, wait_until="networkidle", timeout=30000)
+
+        # Aguarda React renderizar os produtos (espera algum botão aparecer)
+        logger.info("Aguardando React renderizar produtos...")
+        await _delay(5, 7)
+
+        # Scroll para triggerar lazy-loading
+        await page.evaluate("window.scrollTo(0, document.body.scrollHeight / 3)")
+        await _delay(2, 3)
+        await page.evaluate("window.scrollTo(0, document.body.scrollHeight * 2 / 3)")
+        await _delay(2, 3)
+        await page.evaluate("window.scrollTo(0, 0)")
+        await _delay(2, 3)
+
+        # Screenshot de debug antes da extração
+        await _screenshot(page, "before_extract", screenshots_dir)
+        logger.info(f"URL atual: {page.url}")
 
         page_num = 1
         while len(products) < max_products:
             logger.info(f"Página {page_num} — produtos coletados: {len(products)}")
 
-            # Wait for product items to load
-            try:
-                await page.wait_for_selector(
-                    SELECTORS["product_list_item"], timeout=15000
-                )
-            except Exception:
-                logger.warning("Nenhum produto encontrado nesta página.")
+            # Aguarda mais um pouco para garantir renderização
+            await _delay(2, 3)
+
+            # ── Estratégia 1: JS robusto com múltiplas abordagens ──────────────
+            js_products = await page.evaluate("""
+                () => {
+                    const results = [];
+                    const seen = new Set();
+
+                    // Helper: encontra o ancestral mais próximo que contém comissão E link
+                    function findCard(startEl, maxLevels) {
+                        let el = startEl;
+                        for (let i = 0; i < maxLevels; i++) {
+                            el = el.parentElement;
+                            if (!el) return null;
+                            const txt = el.innerText || '';
+                            const hasComm = /\\d+[,.]?\\d*\\s*%/.test(txt);
+                            const hasLink = el.querySelector('a[href*="shopee.com.br"]');
+                            if (hasComm && hasLink && txt.length > 30) return el;
+                        }
+                        return null;
+                    }
+
+                    // ── Estratégia A: via botões "Obter link" ─────────────────
+                    const btns = Array.from(document.querySelectorAll('button'))
+                        .filter(el => /obter\\s*link/i.test(el.textContent));
+
+                    btns.forEach(btn => {
+                        try {
+                            const card = findCard(btn, 12);
+                            if (!card) return;
+
+                            const fullText = card.innerText || '';
+                            const links = Array.from(card.querySelectorAll('a[href*="shopee.com.br"]'));
+                            const href = links.length > 0 ? links[0].href : '';
+                            if (!href || seen.has(href)) return;
+
+                            const commMatches = fullText.match(/(\\d+(?:[,.]\\d+)?)\\s*%/g) || [];
+                            const commValues = commMatches.map(m => parseFloat(m.replace('%','').replace(',','.')));
+                            const commission = commValues.length > 0 ? Math.max(...commValues) : 0;
+
+                            const lines = fullText.split('\\n').map(t => t.trim()).filter(t => t.length > 8 && !/^\\d+[,.]?\\d*\\s*%/.test(t) && !/^R\\$/.test(t));
+                            const name = lines[0] || 'Produto';
+
+                            if (commission > 0) {
+                                seen.add(href);
+                                results.push({ name: name.substring(0, 150), url: href, commission });
+                            }
+                        } catch(e) {}
+                    });
+
+                    // ── Estratégia B: via imagens de produto (img dentro de links) ─
+                    if (results.length === 0) {
+                        const imgs = Array.from(document.querySelectorAll('img[src*="shopee"], img[src*="spx"]'));
+                        imgs.forEach(img => {
+                            try {
+                                const card = findCard(img, 10);
+                                if (!card) return;
+
+                                const fullText = card.innerText || '';
+                                const links = Array.from(card.querySelectorAll('a[href*="shopee.com.br"]'));
+                                const href = links.length > 0 ? links[0].href : '';
+                                if (!href || seen.has(href)) return;
+
+                                const commMatches = fullText.match(/(\\d+(?:[,.]\\d+)?)\\s*%/g) || [];
+                                const commValues = commMatches.map(m => parseFloat(m.replace('%','').replace(',','.')));
+                                const commission = commValues.length > 0 ? Math.max(...commValues) : 0;
+
+                                const lines = fullText.split('\\n').map(t => t.trim()).filter(t => t.length > 8);
+                                const name = img.alt || lines[0] || 'Produto';
+
+                                if (commission > 0) {
+                                    seen.add(href);
+                                    results.push({ name: name.substring(0, 150), url: href, commission });
+                                }
+                            } catch(e) {}
+                        });
+                    }
+
+                    // ── Debug info ─────────────────────────────────────────────
+                    const debugInfo = {
+                        totalButtons: document.querySelectorAll('button').length,
+                        obterLinkBtns: Array.from(document.querySelectorAll('button')).filter(b => /obter\\s*link/i.test(b.textContent)).length,
+                        shopeeLinks: document.querySelectorAll('a[href*="shopee.com.br"]').length,
+                        bodyTextLen: document.body.innerText.length,
+                    };
+                    console.log('DEBUG EXTRACT:', JSON.stringify(debugInfo));
+
+                    return results;
+                }
+            """)
+
+            logger.info(f"JS extraiu {len(js_products)} produtos na página {page_num}")
+
+            # Se ainda 0, tira screenshot e loga HTML parcial para debug
+            if len(js_products) == 0:
+                await _screenshot(page, f"zero_products_p{page_num}", screenshots_dir)
+                page_title = await page.title()
+                logger.warning(f"0 produtos extraídos. Título da página: '{page_title}' | URL: {page.url}")
+
+                # Tenta aguardar elemento de produto aparecer (até 10s)
+                try:
+                    await page.wait_for_selector("button", timeout=10000)
+                    btn_count = await page.evaluate("document.querySelectorAll('button').length")
+                    logger.info(f"Botões na página: {btn_count}")
+                    obter_count = await page.evaluate("""
+                        Array.from(document.querySelectorAll('button'))
+                            .filter(b => /obter\\s*link/i.test(b.textContent)).length
+                    """)
+                    logger.info(f"Botões 'Obter link': {obter_count}")
+                except Exception:
+                    pass
+
+                logger.warning("Nenhum produto encontrado nesta página. Encerrando paginação.")
                 break
 
-            items = await page.query_selector_all(SELECTORS["product_list_item"])
-            for item in items:
+            for p in js_products:
                 if len(products) >= max_products:
                     break
-                try:
-                    product = await _extract_product_from_element(item, min_commission_pct)
-                    if product:
-                        products.append(product)
-                except Exception as e:
-                    logger.debug(f"Erro ao extrair produto: {e}")
+                commission = p.get('commission', 0)
+                if commission < min_commission_pct:
                     continue
+                products.append({
+                    "produto": p.get('name', 'Produto'),
+                    "product_id": _extract_product_id(p.get('url', '')),
+                    "link_original": p.get('url', ''),
+                    "comissao_novo": commission,
+                    "comissao_atual": commission * 0.5,
+                    "thumbnail_url": "",
+                    "category": "",
+                })
 
-            # Try pagination
+            if len(products) >= max_products:
+                break
+
+            # Paginação
             next_btn = await page.query_selector(SELECTORS["pagination_next"])
             if not next_btn:
+                logger.info("Sem próxima página, fim da paginação.")
                 break
             is_disabled = await next_btn.get_attribute("disabled")
             if is_disabled:
+                logger.info("Botão próxima página desabilitado, fim.")
                 break
 
             await next_btn.click()
-            await _delay(2, 4)
+            await _delay(3, 5)
             page_num += 1
 
     except Exception as e:
@@ -420,5 +625,13 @@ async def scrape_all_products(settings) -> list:
         return enriched
 
     finally:
-        await browser.close()
-        await playwright.stop()
+        if _cdp_mode:
+            # Em modo CDP não fechamos o Chrome do usuário — apenas desconectamos
+            logger.info("Modo CDP: desconectando sem fechar o Chrome.")
+            try:
+                await playwright.stop()
+            except Exception:
+                pass
+        else:
+            await browser.close()
+            await playwright.stop()

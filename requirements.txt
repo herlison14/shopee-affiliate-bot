@@ -5,3 +5,4 @@ plotly
 python-dotenv
 httpx
 altair>=5.0.0
+psutil

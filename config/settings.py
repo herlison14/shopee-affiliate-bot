@@ -45,6 +45,9 @@ class Settings:
     min_commission_pct: float
     headless: bool
 
+    # Notificações
+    whatsapp_phone: str = ""
+
     # SubID keys (fixed by Shopee spec)
     SUBID_PRODUCT_KEY: str = "nome_do_produto"
     SUBID_SOCIAL_KEY: str = "rede_social"
@@ -96,6 +99,7 @@ def get_settings() -> Settings:
         max_products=int(_optional("MAX_PRODUCTS_PER_RUN", "100")),
         min_commission_pct=float(_optional("MIN_COMMISSION_PCT", "5.0")),
         headless=_optional("HEADLESS", "true").lower() != "false",
+        whatsapp_phone=_optional("WHATSAPP_PHONE", ""),
     )
 
 

@@ -243,8 +243,19 @@ async def login(
 
 
 async def _is_logged_in(page: Page) -> bool:
-    """Check if the current page shows an authenticated state."""
+    """Check if the current page shows an authenticated state.
+
+    Also considers the URL: if we are already on affiliate.shopee.com.br and
+    there is no 'login' or '404' segment in the URL, the session is active.
+    """
     try:
+        current_url = page.url
+        if (
+            "affiliate.shopee.com.br" in current_url
+            and "login" not in current_url
+            and "404" not in current_url
+        ):
+            return True
         return await page.is_visible(SELECTORS["dashboard_indicator"], timeout=5000)
     except Exception:
         return False
@@ -513,7 +524,7 @@ async def get_affiliate_link(
 ) -> str | None:
     """
     Use the affiliate portal's Custom Link tool to generate a tracked affiliate link.
-    Fills SubID fields with tracking data.
+    Fills SubID fields with tracking data using JS to avoid selector issues.
     """
     try:
         await page.goto(
@@ -521,41 +532,85 @@ async def get_affiliate_link(
             wait_until="networkidle",
             timeout=30000,
         )
-        await _delay(1, 2)
+        await _delay(2, 3)
 
-        # Fill product URL
-        await page.fill(SELECTORS["link_input"], product["link_original"])
-        await _delay(0.5, 1)
-
-        # Fill SubID fields
         subid_values = [
             subids.get("nome_do_produto", ""),
             subids.get("rede_social", ""),
             subids.get("campanha_atual", ""),
         ]
-        for selector, value in zip(
-            [SELECTORS["subid1_input"], SELECTORS["subid2_input"], SELECTORS["subid3_input"]],
-            subid_values,
-        ):
-            try:
-                if await page.is_visible(selector, timeout=3000):
-                    await page.fill(selector, value)
-                    await _delay(0.2, 0.5)
-            except Exception:
-                pass
 
-        # Click generate
-        await page.click(SELECTORS["generate_btn"])
+        # Usa JS para preencher todos os campos de forma robusta
+        filled = await page.evaluate("""
+            ([url, sub1, sub2, sub3]) => {
+                // Preenche a textarea com a URL do produto
+                const textarea = document.querySelector('textarea');
+                if (!textarea) return {ok: false, reason: 'textarea nao encontrada'};
+                const nativeTextareaSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value').set;
+                nativeTextareaSetter.call(textarea, url);
+                textarea.dispatchEvent(new Event('input', {bubbles: true}));
+                textarea.dispatchEvent(new Event('change', {bubbles: true}));
+
+                // Preenche os 3 campos Sub_id (inputs de texto)
+                const inputs = Array.from(document.querySelectorAll('input[type="text"], input:not([type])'))
+                    .filter(i => !i.readOnly && i.offsetParent !== null);
+                const nativeInputSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+                const subValues = [sub1, sub2, sub3];
+                for (let i = 0; i < Math.min(inputs.length, 3); i++) {
+                    nativeInputSetter.call(inputs[i], subValues[i]);
+                    inputs[i].dispatchEvent(new Event('input', {bubbles: true}));
+                    inputs[i].dispatchEvent(new Event('change', {bubbles: true}));
+                }
+                return {ok: true, inputsFound: inputs.length};
+            }
+        """, [product["link_original"]] + subid_values)
+
+        logger.debug(f"Preenchimento do formulário: {filled}")
+        await _delay(1, 2)
+
+        # Clica no botão "Obter link"
+        clicked = await page.evaluate("""
+            () => {
+                const btns = Array.from(document.querySelectorAll('button'))
+                    .filter(b => /obter\\s*link/i.test(b.textContent) && !b.disabled);
+                if (btns.length > 0) { btns[0].click(); return true; }
+                return false;
+            }
+        """)
+        if not clicked:
+            logger.warning("Botão 'Obter link' não encontrado na página custom_link")
+            await _screenshot(page, f"custom_link_no_btn_{product.get('product_id','x')}", screenshots_dir)
+            return None
+
         await _delay(2, 3)
 
-        # Capture result link
-        result_el = await page.query_selector(SELECTORS["copy_link_result"])
-        if result_el:
-            link = await result_el.get_attribute("value") or await result_el.inner_text()
-            link = link.strip()
-            if link:
-                logger.debug(f"Link afiliado gerado: {link[:60]}...")
-                return link
+        # Captura o link gerado — tenta múltiplas estratégias
+        link = await page.evaluate("""
+            () => {
+                // Estratégia 1: input readonly (campo de resultado)
+                const readonly = document.querySelector('input[readonly]');
+                if (readonly && readonly.value && readonly.value.startsWith('http')) return readonly.value;
+
+                // Estratégia 2: qualquer input com URL de afiliado
+                const inputs = Array.from(document.querySelectorAll('input'));
+                for (const inp of inputs) {
+                    if (inp.value && inp.value.includes('s.shopee') || (inp.value && inp.value.includes('shope') && inp.value.includes('sub_id'))) {
+                        return inp.value;
+                    }
+                }
+
+                // Estratégia 3: texto visível que contém link s.shopee
+                const allText = document.body.innerText;
+                const match = allText.match(/(https?:\\/\\/s\\.shopee\\.com\\.br\\/[\\w\\-]+)/);
+                if (match) return match[1];
+
+                return null;
+            }
+        """)
+
+        if link:
+            logger.debug(f"Link afiliado gerado: {link[:60]}...")
+            return link
 
         logger.warning(f"Link afiliado não capturado para: {product['produto']}")
         await _screenshot(page, f"link_gen_error_{product['product_id']}", screenshots_dir)
@@ -576,16 +631,37 @@ async def scrape_all_products(settings) -> list:
     playwright, browser, context, page = await launch_browser(headless=settings.headless)
 
     try:
-        logged_in = await login(
-            page=page,
-            context=context,
-            email=settings.shopee_email,
-            password=settings.shopee_password,
-            affiliate_url=settings.shopee_affiliate_url,
-            session_path=settings.SESSION_PATH,
-            screenshots_dir=settings.SCREENSHOTS_DIR,
-            headless=settings.headless,
+        current_url = page.url
+        logger.info(
+            "Modo CDP: %s | Página inicial: %s",
+            "ATIVO" if _cdp_mode else "inativo (navegador próprio)",
+            current_url,
         )
+
+        # In CDP mode, skip login entirely when already on the affiliate domain.
+        already_on_affiliate = (
+            _cdp_mode
+            and "affiliate.shopee.com.br" in current_url
+            and "login" not in current_url
+            and "404" not in current_url
+        )
+
+        if already_on_affiliate:
+            logger.info(
+                "CDP: já na página do afiliado — login ignorado, sessão considerada ativa."
+            )
+            logged_in = True
+        else:
+            logged_in = await login(
+                page=page,
+                context=context,
+                email=settings.shopee_email,
+                password=settings.shopee_password,
+                affiliate_url=settings.shopee_affiliate_url,
+                session_path=settings.SESSION_PATH,
+                screenshots_dir=settings.SCREENSHOTS_DIR,
+                headless=settings.headless,
+            )
 
         if not logged_in:
             logger.error("Não foi possível fazer login. Abortando scraping.")

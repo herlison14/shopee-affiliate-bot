@@ -71,41 +71,106 @@ def load_manual_queue() -> list:
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 
+def _pipeline_is_running() -> bool:
+    """Verifica se o pipeline já está rodando."""
+    import psutil
+    for proc in psutil.process_iter(['cmdline']):
+        try:
+            cmd = " ".join(proc.info['cmdline'] or [])
+            if "main.py" in cmd and "--dashboard" not in cmd:
+                return True
+        except Exception:
+            pass
+    return False
+
+
 def render_sidebar():
     with st.sidebar:
         st.image("https://img.icons8.com/color/96/shopee.png", width=60)
         st.title("Shopee Affiliate Bot")
         st.markdown("---")
 
-        st.subheader("Controles")
+        # Status do pipeline
+        running = _pipeline_is_running()
+        if running:
+            st.warning("⏳ Pipeline em execução...")
+        else:
+            st.success("✅ Pronto para executar")
 
-        if st.button("▶ Executar Pipeline", use_container_width=True, type="primary"):
-            st.info("Iniciando pipeline em background...")
-            subprocess.Popen(
-                [sys.executable, "main.py"],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
-            st.success("Pipeline iniciado! Atualize em ~2 min.")
+        st.markdown("---")
+        st.subheader("🚀 Controles")
 
-        if st.button("🔁 Atualizar Dashboard", use_container_width=True):
-            st.cache_data.clear()
-            st.rerun()
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("▶ Executar\nPipeline", use_container_width=True, type="primary", disabled=running):
+                subprocess.Popen(
+                    [sys.executable, "main.py"],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    cwd=str(Path(__file__).parent.parent),
+                )
+                st.success("✅ Iniciado!")
+                st.info("Aguarde ~2min e clique em Atualizar.")
 
-        if st.button("⚙ Pipeline Dry-Run (Teste)", use_container_width=True):
+        with col2:
+            if st.button("🔁 Atualizar", use_container_width=True):
+                st.cache_data.clear()
+                st.rerun()
+
+        if st.button("🧪 Teste (Dry-Run)", use_container_width=True):
             subprocess.Popen(
                 [sys.executable, "main.py", "--dry-run"],
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
+                cwd=str(Path(__file__).parent.parent),
             )
-            st.success("Dry-run iniciado!")
+            st.success("Dry-run iniciado! Clique Atualizar em 10s.")
 
         st.markdown("---")
-        st.caption(f"Atualizado: {datetime.now().strftime('%H:%M:%S')}")
-        st.caption("Dados atualizam a cada 30s automaticamente.")
+
+        # Download do Excel
+        try:
+            excel_bytes = Path(EXCEL_PATH).read_bytes()
+            st.download_button(
+                label="⬇ Baixar Excel",
+                data=excel_bytes,
+                file_name=f"shopee_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                use_container_width=True,
+            )
+        except Exception:
+            st.caption("Excel ainda não gerado.")
+
+        st.markdown("---")
+        st.caption(f"🕐 {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
+        st.caption("♻️ Dados atualizam a cada 30s.")
 
 
 # ── KPI Row ───────────────────────────────────────────────────────────────────
+
+def render_schedule_info():
+    """Mostra os próximos horários de postagem automática."""
+    try:
+        from dotenv import load_dotenv
+        import os
+        load_dotenv()
+        times = os.getenv("POST_TIMES", "09:00,13:00,20:00").split(",")
+        whatsapp = os.getenv("WHATSAPP_PHONE", "")
+
+        st.subheader("🕐 Agendamento Automático")
+        cols = st.columns(len(times) + 1)
+        for i, t in enumerate(times):
+            cols[i].metric(f"Postagem {i+1}", t.strip())
+
+        if whatsapp and len(whatsapp) > 5:
+            cols[-1].metric("📱 WhatsApp", f"****{whatsapp[-4:]}")
+        else:
+            cols[-1].warning("⚠️ WhatsApp não configurado")
+
+        st.caption("Configure horários em POST_TIMES no arquivo .env | `python main.py --all` para ativar")
+    except Exception:
+        pass
+
 
 def render_kpis(df: pd.DataFrame):
     st.subheader("Resumo")
@@ -242,6 +307,8 @@ def main():
 
     df = load_data()
 
+    render_schedule_info()
+    st.markdown("---")
     render_kpis(df)
     st.markdown("---")
     render_products_table(df)

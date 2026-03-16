@@ -49,10 +49,15 @@ def save_to_excel(products: list, filepath: str) -> str:
 
     Path(filepath).parent.mkdir(parents=True, exist_ok=True)
 
-    # Add default scheduling fields
+    # Add default scheduling fields + ganho estimado
     for p in products:
         p.setdefault("status_agendamento", "pendente")
         p.setdefault("data_publicacao", "")
+        p.setdefault("preco", 0)
+        # Ganho estimado = preço × (comissão% / 100)
+        preco = float(p.get("preco") or 0)
+        comissao = float(p.get("comissao_novo") or 0)
+        p["ganho_estimado"] = round(preco * comissao / 100, 2) if preco > 0 else 0
 
     df = pd.DataFrame(products)
 

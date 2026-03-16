@@ -342,12 +342,15 @@ async def discover_products(
                             const commValues = commMatches.map(m => parseFloat(m.replace('%','').replace(',','.')));
                             const commission = commValues.length > 0 ? Math.max(...commValues) : 0;
 
+                            const priceMatches = fullText.match(/R\$\s?[\d.,]+/g) || [];
+                            const price = priceMatches.length > 0 ? parseFloat(priceMatches[0].replace('R$','').replace(/\./g,'').replace(',','.').trim()) : 0;
+
                             const lines = fullText.split('\\n').map(t => t.trim()).filter(t => t.length > 8 && !/^\\d+[,.]?\\d*\\s*%/.test(t) && !/^R\\$/.test(t));
                             const name = lines[0] || 'Produto';
 
                             if (commission > 0) {
                                 seen.add(href);
-                                results.push({ name: name.substring(0, 150), url: href, commission });
+                                results.push({ name: name.substring(0, 150), url: href, commission, price });
                             }
                         } catch(e) {}
                     });
@@ -369,12 +372,15 @@ async def discover_products(
                                 const commValues = commMatches.map(m => parseFloat(m.replace('%','').replace(',','.')));
                                 const commission = commValues.length > 0 ? Math.max(...commValues) : 0;
 
+                                const priceMatches2 = fullText.match(/R\$\s?[\d.,]+/g) || [];
+                                const price2 = priceMatches2.length > 0 ? parseFloat(priceMatches2[0].replace('R$','').replace(/\./g,'').replace(',','.').trim()) : 0;
+
                                 const lines = fullText.split('\\n').map(t => t.trim()).filter(t => t.length > 8);
                                 const name = img.alt || lines[0] || 'Produto';
 
                                 if (commission > 0) {
                                     seen.add(href);
-                                    results.push({ name: name.substring(0, 150), url: href, commission });
+                                    results.push({ name: name.substring(0, 150), url: href, commission, price: price2 });
                                 }
                             } catch(e) {}
                         });
@@ -429,6 +435,7 @@ async def discover_products(
                     "link_original": p.get('url', ''),
                     "comissao_novo": commission,
                     "comissao_atual": commission * 0.5,
+                    "preco": p.get('price', 0),
                     "thumbnail_url": "",
                     "category": "",
                 })

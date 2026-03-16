@@ -1,0 +1,88 @@
+name: 🤖 Shopee Affiliate Bot — Pipeline Diário
+
+on:
+  schedule:
+    # Executa às 09:00, 13:00 e 20:00 BRT (BRT = UTC-3)
+    - cron: '0 12 * * *'   # 09:00 BRT
+    - cron: '0 16 * * *'   # 13:00 BRT
+    - cron: '0 23 * * *'   # 20:00 BRT
+  workflow_dispatch:       # Botão manual no GitHub
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: 📥 Checkout código
+        uses: actions/checkout@v4
+
+      - name: 🐍 Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: 📦 Instalar dependências (sem Playwright)
+        run: |
+          pip install pandas openpyxl anthropic python-dotenv httpx
+
+      - name: 📋 Criar .env a partir dos Secrets
+        run: |
+          cat > .env << EOF
+          ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
+          SHOPEE_EMAIL=${{ secrets.SHOPEE_EMAIL }}
+          SHOPEE_PASSWORD=${{ secrets.SHOPEE_PASSWORD }}
+          CAMPAIGN_NAME=campanha_2026
+          SOCIAL_NETWORK=tiktok
+          MAX_PRODUCTS_PER_RUN=50
+          HEADLESS=true
+          ANTHROPIC_MODEL=claude-opus-4-6
+          EOF
+
+      - name: 📊 Baixar output.xlsx anterior (se existir)
+        uses: actions/download-artifact@v4
+        with:
+          name: output-xlsx
+          path: data/
+        continue-on-error: true
+
+      - name: 🤖 Rodar geração de copy (modo sem scraping)
+        run: |
+          python -c "
+          import json, os
+          from pathlib import Path
+          from ai.copy_generator import generate_batch
+          from config.settings import get_settings
+
+          settings = get_settings()
+
+          # Carrega produtos do arquivo JSON se existir
+          products_file = Path('data/pending_products.json')
+          if products_file.exists():
+              products = json.loads(products_file.read_text())
+              print(f'Gerando copy para {len(products)} produtos...')
+              results = generate_batch(products)
+              print(f'Copy gerado para {len(results)} produtos')
+          else:
+              print('Nenhum produto pendente encontrado.')
+          "
+        continue-on-error: true
+
+      - name: 💾 Salvar output.xlsx como artefato
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: output-xlsx
+          path: data/output.xlsx
+          retention-days: 30
+          overwrite: true
+
+      - name: 📤 Commit e push do output.xlsx
+        run: |
+          git config user.name "Shopee Bot"
+          git config user.email "bot@shopee-affiliate.com"
+          git add data/output.xlsx data/pending_products.json || true
+          git diff --staged --quiet || git commit -m "🤖 Auto: atualiza output $(date '+%d/%m %H:%M')"
+          git push || true
+        continue-on-error: true

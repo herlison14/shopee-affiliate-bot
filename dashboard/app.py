@@ -628,6 +628,140 @@ def render_manual_queue():
                 st.caption(f"⏱ Adicionado: {adicionado}")
 
 
+# ── Gerenciador de Vídeos ─────────────────────────────────────────────────────
+
+def render_video_manager(df: pd.DataFrame):
+    st.markdown('<div class="section-title">🎬 Vídeos — Download & Postagem Automática</div>', unsafe_allow_html=True)
+
+    # Importa o scanner de vídeos
+    try:
+        from scheduler.video_downloader import list_available_videos, download_video_for_product
+        from scheduler.shopee_video_poster import find_video_for_product
+        videos = list_available_videos()
+    except Exception as e:
+        st.error(f"Erro ao carregar módulo de vídeos: {e}")
+        return
+
+    col_info, col_action = st.columns([2, 1])
+
+    with col_info:
+        disponiveis = [v for v in videos if not v["usado"]]
+        usados      = [v for v in videos if v["usado"]]
+        total_mb    = sum(v["tamanho_mb"] for v in videos)
+
+        c1, c2, c3 = st.columns(3)
+        c1.metric("🎥 Vídeos disponíveis", len(disponiveis))
+        c2.metric("✅ Já postados", len(usados))
+        c3.metric("💾 Espaço usado", f"{total_mb:.1f} MB")
+
+    with col_action:
+        st.markdown("**Pasta de vídeos:**")
+        pasta = str(Path("data/videos").resolve())
+        st.code(pasta, language=None)
+        st.caption("Arraste vídeos para esta pasta — o bot usa automaticamente")
+
+    # ── Download de vídeo por URL ──────────────────────────────────────────────
+    st.markdown("**📥 Baixar vídeo por URL (YouTube Shorts / TikTok / MP4 direto):**")
+    col_url, col_prod, col_btn = st.columns([3, 2, 1])
+
+    with col_url:
+        video_url = st.text_input(
+            "URL do vídeo",
+            placeholder="https://youtube.com/shorts/... ou https://tiktok.com/@.../video/...",
+            label_visibility="collapsed"
+        )
+    with col_prod:
+        product_names = df["produto"].tolist() if not df.empty and "produto" in df.columns else []
+        produto_sel = st.selectbox(
+            "Produto",
+            ["Selecionar produto..."] + product_names,
+            label_visibility="collapsed"
+        )
+    with col_btn:
+        baixar = st.button("⬇ Baixar", type="primary", use_container_width=True)
+
+    if baixar:
+        if not video_url or video_url.startswith("http") is False:
+            st.error("Cole uma URL válida de vídeo.")
+        elif produto_sel == "Selecionar produto...":
+            st.error("Selecione um produto.")
+        else:
+            with st.spinner(f"Baixando vídeo para '{produto_sel[:40]}'..."):
+                product_dict = {"produto": produto_sel}
+                result = download_video_for_product(product_dict, video_url)
+            if result:
+                st.success(f"✅ Vídeo salvo: `{Path(result).name}`")
+                st.cache_data.clear()
+                st.rerun()
+            else:
+                st.error("❌ Falha no download. Verifique a URL e tente novamente.")
+
+    # ── Postagem manual via dashboard ──────────────────────────────────────────
+    if disponiveis and not df.empty:
+        st.markdown("**🚀 Postar agora no Shopee:**")
+        col_v, col_p2, col_post = st.columns([2, 2, 1])
+
+        with col_v:
+            video_escolhido = st.selectbox(
+                "Vídeo",
+                [v["arquivo"] for v in disponiveis],
+                label_visibility="collapsed"
+            )
+        with col_p2:
+            pendentes = df[df.get("status_agendamento", pd.Series()) == "pendente"]["produto"].tolist() if "status_agendamento" in df.columns else df["produto"].tolist()
+            produto_post = st.selectbox(
+                "Produto para postar",
+                ["Selecionar..."] + pendentes,
+                label_visibility="collapsed",
+                key="produto_post"
+            )
+        with col_post:
+            postar = st.button("📤 Postar!", type="primary", use_container_width=True)
+
+        if postar:
+            if produto_post == "Selecionar...":
+                st.error("Selecione um produto.")
+            else:
+                video_path = str(Path("data/videos") / video_escolhido)
+                product_row = df[df["produto"] == produto_post].to_dict("records")
+                if product_row:
+                    with st.spinner(f"Postando '{produto_post[:40]}' no Shopee..."):
+                        try:
+                            from scheduler.shopee_video_poster import post_shopee_video
+                            from config.settings import settings
+                            result = post_shopee_video(product_row[0], video_path, settings)
+                            if result.get("status") == "success":
+                                st.success("✅ Postado no Shopee com sucesso!")
+                                # Atualiza Excel
+                                import threading
+                                from scheduler.post_scheduler import _update_post_status, mark_video_as_used
+                                lock = threading.Lock()
+                                _update_post_status(
+                                    "data/output.xlsx", lock,
+                                    product_row[0].get("link_original", ""),
+                                    "publicado_shopee", "shopee_videos"
+                                )
+                                from scheduler.shopee_video_poster import mark_video_as_used
+                                mark_video_as_used(video_path)
+                                st.cache_data.clear()
+                            else:
+                                st.error(f"❌ Falha: {result.get('reason', 'desconhecido')}")
+                        except Exception as e:
+                            st.error(f"Erro ao postar: {e}")
+
+    # ── Lista de vídeos disponíveis ────────────────────────────────────────────
+    if videos:
+        with st.expander(f"📂 Ver todos os vídeos ({len(videos)} arquivos)"):
+            for v in videos:
+                status_vid = "✅ Usado" if v["usado"] else "🟢 Disponível"
+                col_a, col_b, col_c = st.columns([3, 1, 1])
+                col_a.markdown(f"`{v['arquivo']}`")
+                col_b.markdown(f"{v['tamanho_mb']} MB")
+                col_c.markdown(status_vid)
+    else:
+        st.info("📁 Nenhum vídeo na pasta `data/videos/` ainda. Grave um vídeo ou use o download acima.")
+
+
 # ── Log Viewer ────────────────────────────────────────────────────────────────
 
 def render_log_viewer():
@@ -663,6 +797,8 @@ def main():
     render_products_table(df)
     st.markdown("---")
     render_charts(df)
+    st.markdown("---")
+    render_video_manager(df)
     st.markdown("---")
     render_manual_queue()
     st.markdown("---")

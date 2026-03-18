@@ -1,0 +1,28 @@
+📹 PASTA DE VÍDEOS — INSTRUÇÕES
+================================
+
+Coloque seus vídeos aqui para postagem automática no Shopee.
+
+FORMATOS ACEITOS:
+  .mp4 (recomendado)
+  .mov
+  .avi
+  .webm
+
+COMO FUNCIONA:
+  1. Grave um vídeo no celular mostrando o produto
+  2. Copie o arquivo para esta pasta
+  3. O bot usa automaticamente o vídeo mais recente disponível
+  4. Após postado, o arquivo é renomeado para nome_used.mp4
+
+DICA: Nomeie os arquivos com palavras-chave do produto para melhor correspondência.
+Exemplo: "tenis_nike.mp4" → será usado para produtos com "tênis nike"
+
+DIMENSÕES RECOMENDADAS para Shopee Videos:
+  - Formato vertical: 9:16 (1080x1920)
+  - Duração: 15 a 60 segundos
+  - Tamanho máximo: 50MB
+
+O bot preenche automaticamente:
+  - Título (texto do overlay gerado pela IA)
+  - Descrição (legenda + hashtags + link afiliado)

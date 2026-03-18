@@ -471,7 +471,7 @@ def render_ganho_estimado(df: pd.DataFrame):
         font=dict(family="sans-serif", size=12, color="#1A1A2E"),
     )
     fig.update_xaxes(gridcolor="#E8E8E8", showgrid=True, zeroline=False)
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
     # Cenários de ganho
     st.markdown('<div class="section-title">📈 Simulação de Cenários</div>', unsafe_allow_html=True)
@@ -487,7 +487,7 @@ def render_ganho_estimado(df: pd.DataFrame):
             "Ganho Anual": f"R$ {g_dia*365:,.2f}",
         })
     df_cen = pd.DataFrame(data_cenarios)
-    st.dataframe(df_cen, use_container_width=True, hide_index=True)
+    st.dataframe(df_cen, width='stretch', hide_index=True)
 
 
 # ── Products Table ────────────────────────────────────────────────────────────
@@ -524,11 +524,11 @@ def render_products_table(df: pd.DataFrame):
 
     styled = filtered[display_cols].style
     if "status_agendamento" in display_cols:
-        styled = styled.applymap(_color_status, subset=["status_agendamento"])
+        styled = styled.map(_color_status, subset=["status_agendamento"])
     if "ganho_estimado" in display_cols:
         styled = styled.format({"ganho_estimado": "R$ {:.2f}", "preco": "R$ {:.2f}", "comissao_novo": "{:.1f}%"}, na_rep="-")
 
-    st.dataframe(styled, use_container_width=True, height=380)
+    st.dataframe(styled, width='stretch', height=380)
     st.caption(f"Mostrando {len(filtered)} de {len(df)} produtos")
 
 
@@ -575,7 +575,7 @@ def render_charts(df: pd.DataFrame):
                 textfont=dict(color="white", size=12),
                 pull=[0.03] * len(status_counts),
             )
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
     with col2:
         if "comissao_novo" in df.columns:
@@ -599,7 +599,7 @@ def render_charts(df: pd.DataFrame):
             )
             fig2.update_xaxes(gridcolor="#E8E8E8", showgrid=True)
             fig2.update_yaxes(gridcolor="#E8E8E8", showgrid=True)
-            st.plotly_chart(fig2, use_container_width=True)
+            st.plotly_chart(fig2, width='stretch')
 
     with col3:
         if "data_publicacao" in df.columns:
@@ -628,7 +628,7 @@ def render_charts(df: pd.DataFrame):
                     fig3.update_traces(textfont=dict(color="#1A1A2E", size=11), textposition="outside")
                     fig3.update_xaxes(gridcolor="#E8E8E8")
                     fig3.update_yaxes(gridcolor="#E8E8E8")
-                    st.plotly_chart(fig3, use_container_width=True)
+                    st.plotly_chart(fig3, width='stretch')
                 except Exception:
                     st.caption("Ainda sem histórico de publicações.")
             else:

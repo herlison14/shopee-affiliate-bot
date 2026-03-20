@@ -321,8 +321,8 @@ async def main():
 
     modo = "tudo" if args.tudo else ("virais" if args.virais else "produtos")
 
-    from config.settings import Settings
-    settings = Settings()
+    from config.settings import get_settings
+    settings = get_settings()
 
     estado = _estado_inicial()
     estado["status"] = "rodando"

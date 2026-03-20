@@ -16,6 +16,7 @@ from datetime import datetime, timedelta, timezone
 
 import httpx
 from fastapi import Depends, FastAPI, Header, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -37,6 +38,13 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="License Server", docs_url=None, redoc_url=None)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["*"],
+)
 
 
 @app.on_event("startup")
@@ -271,6 +279,55 @@ def activate_license(req: ActivateRequest, db: Session = Depends(get_db)):
 
     logger.info(f"Licença {req.license_key} ativada — HWID: {req.hwid[:12]}...")
     return {"status": "activated", "message": "Licença ativada com sucesso!"}
+
+
+# ── Pagamento PIX via Mercado Pago ────────────────────────────────────────────
+
+class CreatePaymentRequest(BaseModel):
+    email: str
+
+
+class CreatePaymentResponse(BaseModel):
+    payment_id: str
+    qr_code: str          # string PIX (copia e cola)
+    qr_code_base64: str   # imagem PNG em base64
+
+
+@app.post("/payment/create", response_model=CreatePaymentResponse)
+async def create_payment(req: CreatePaymentRequest):
+    """
+    Cria um pagamento PIX no Mercado Pago e retorna QR Code real.
+    Chamado pelo frontend da landing page quando cliente clica em Pagar.
+    """
+    url = "https://api.mercadopago.com/v1/payments"
+    idempotency_key = f"{req.email}-{datetime.utcnow().strftime('%Y%m%d%H%M')}"
+    headers = {
+        "Authorization": f"Bearer {settings.MP_ACCESS_TOKEN}",
+        "Content-Type": "application/json",
+        "X-Idempotency-Key": idempotency_key,
+    }
+    payload = {
+        "transaction_amount": settings.PRODUCT_PRICE,
+        "description": settings.PRODUCT_NAME,
+        "payment_method_id": "pix",
+        "payer": {"email": req.email},
+    }
+    async with httpx.AsyncClient() as client:
+        try:
+            resp = await client.post(url, json=payload, headers=headers, timeout=15)
+            resp.raise_for_status()
+        except Exception as e:
+            logger.error(f"Erro ao criar pagamento MP: {e}")
+            raise HTTPException(502, "Erro ao criar pagamento no Mercado Pago")
+
+    data = resp.json()
+    txn = data.get("point_of_interaction", {}).get("transaction_data", {})
+
+    return CreatePaymentResponse(
+        payment_id=str(data["id"]),
+        qr_code=txn.get("qr_code", ""),
+        qr_code_base64=txn.get("qr_code_base64", ""),
+    )
 
 
 # ── Entry point para Railway / Render ─────────────────────────────────────────

@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shopee Affiliate Bot — Ganhe Dinheiro No Piloto Automático</title>
+<meta name="description" content="Bot de automação para afiliados Shopee. Scrape produtos, gera copy viral com IA e posta automaticamente no TikTok e Shopee Vídeos.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+<style>
+  /* ── Reset & Base ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --orange:    #ee4d2d;
+    --orange-h:  #ff5e38;
+    --orange-d:  #c93d20;
+    --bg:        #0a0a0f;
+    --surface:   #111118;
+    --surface2:  #18181f;
+    --surface3:  #1f1f28;
+    --border:    rgba(255,255,255,.07);
+    --text:      #f0f0f5;
+    --text-s:    #9090aa;
+    --text-xs:   #55556a;
+    --green:     #22c55e;
+    --radius:    14px;
+    --radius-s:  8px;
+    --glow:      0 0 40px rgba(238,77,45,.22);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* ── Utils ── */
+  .container { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+  .tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(238,77,45,.12); color: var(--orange);
+    border: 1px solid rgba(238,77,45,.25);
+    padding: 5px 14px; border-radius: 999px;
+    font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+  }
+  .tag svg { width: 14px; height: 14px; }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    padding: 16px 20px;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    background: rgba(10,10,15,.75);
+    border-bottom: 1px solid var(--border);
+    transition: background .3s;
+  }
+  .nav-inner {
+    max-width: 1100px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .logo {
+    display: flex; align-items: center; gap: 10px;
+    font-weight: 800; font-size: 18px; text-decoration: none; color: var(--text);
+  }
+  .logo-icon {
+    width: 34px; height: 34px; background: var(--orange);
+    border-radius: 9px; display: flex; align-items: center; justify-content: center;
+  }
+  .logo-icon svg { width: 20px; height: 20px; fill: #fff; }
+  .nav-links { display: flex; align-items: center; gap: 28px; }
+  .nav-links a {
+    color: var(--text-s); text-decoration: none; font-size: 14px; font-weight: 500;
+    transition: color .2s;
+  }
+  .nav-links a:hover { color: var(--text); }
+  .btn-nav {
+    background: var(--orange); color: #fff; border: none; cursor: pointer;
+    padding: 9px 20px; border-radius: var(--radius-s);
+    font-size: 13px; font-weight: 700; text-decoration: none;
+    transition: background .2s, transform .15s;
+  }
+  .btn-nav:hover { background: var(--orange-h); transform: translateY(-1px); }
+  @media (max-width: 640px) { .nav-links { display: none; } }
+
+  /* ── HERO ── */
+  .hero {
+    min-height: 100vh;
+    display: flex; align-items: center;
+    padding: 120px 20px 80px;
+    position: relative; overflow: hidden;
+  }
+  .hero-bg {
+    position: absolute; inset: 0; pointer-events: none;
+    background:
+      radial-gradient(ellipse 800px 500px at 50% 0%, rgba(238,77,45,.13) 0%, transparent 70%),
+      radial-gradient(ellipse 400px 400px at 80% 60%, rgba(238,77,45,.06) 0%, transparent 60%);
+  }
+  .hero-grid {
+    position: absolute; inset: 0; pointer-events: none;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(ellipse 900px 600px at 50% 0%, black, transparent);
+    -webkit-mask-image: radial-gradient(ellipse 900px 600px at 50% 0%, black, transparent);
+  }
+  .hero-inner {
+    position: relative; z-index: 1;
+    max-width: 1100px; margin: 0 auto;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center;
+  }
+  @media (max-width: 900px) {
+    .hero-inner { grid-template-columns: 1fr; text-align: center; }
+    .hero-badges { justify-content: center; }
+    .hero-cta { justify-content: center; }
+    .hero-visual { display: none; }
+  }
+  .hero-label { margin-bottom: 18px; }
+  .hero h1 {
+    font-size: clamp(36px, 5vw, 58px);
+    font-weight: 900; line-height: 1.1;
+    letter-spacing: -.03em;
+    margin-bottom: 22px;
+  }
+  .hero h1 span { color: var(--orange); }
+  .hero-sub {
+    font-size: 17px; color: var(--text-s); line-height: 1.7;
+    max-width: 480px; margin-bottom: 36px;
+  }
+  @media (max-width: 900px) { .hero-sub { margin: 0 auto 36px; } }
+  .hero-cta { display: flex; gap: 14px; flex-wrap: wrap; }
+  .btn-primary {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--orange); color: #fff; font-weight: 700; font-size: 15px;
+    padding: 14px 28px; border-radius: var(--radius); border: none; cursor: pointer;
+    text-decoration: none;
+    box-shadow: 0 8px 32px rgba(238,77,45,.35);
+    transition: background .2s, transform .15s, box-shadow .2s;
+  }
+  .btn-primary:hover {
+    background: var(--orange-h); transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(238,77,45,.45);
+  }
+  .btn-primary svg { width: 18px; height: 18px; }
+  .btn-ghost {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: transparent; color: var(--text-s); font-weight: 600; font-size: 15px;
+    padding: 14px 24px; border-radius: var(--radius);
+    border: 1px solid var(--border); cursor: pointer; text-decoration: none;
+    transition: border-color .2s, color .2s;
+  }
+  .btn-ghost:hover { border-color: rgba(255,255,255,.2); color: var(--text); }
+  .hero-badges {
+    display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px;
+  }
+  .badge {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--surface2); border: 1px solid var(--border);
+    padding: 6px 14px; border-radius: 999px;
+    font-size: 12px; color: var(--text-s); font-weight: 500;
+  }
+  .badge .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+  /* Hero Visual */
+  .hero-visual {
+    position: relative; display: flex; justify-content: center;
+  }
+  .dashboard-mock {
+    width: 100%; max-width: 440px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px; padding: 20px;
+    box-shadow: 0 40px 80px rgba(0,0,0,.6), var(--glow);
+    animation: float 4s ease-in-out infinite;
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  .mock-header {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 16px;
+  }
+  .mock-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .mock-title { font-size: 12px; color: var(--text-s); font-weight: 600; margin-left: 4px; }
+  .mock-kpis {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;
+  }
+  .mock-kpi {
+    background: var(--surface2); border-radius: 10px; padding: 12px;
+    border: 1px solid var(--border);
+  }
+  .mock-kpi-label { font-size: 10px; color: var(--text-xs); margin-bottom: 4px; }
+  .mock-kpi-val { font-size: 20px; font-weight: 800; }
+  .mock-kpi-val.green { color: var(--green); }
+  .mock-kpi-val.orange { color: var(--orange); }
+  .mock-list { display: flex; flex-direction: column; gap: 8px; }
+  .mock-row {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface2); border-radius: 8px; padding: 10px 12px;
+    border: 1px solid var(--border);
+  }
+  .mock-thumb {
+    width: 32px; height: 32px; border-radius: 6px;
+    background: linear-gradient(135deg, var(--orange-d), var(--orange));
+    flex-shrink: 0;
+  }
+  .mock-info { flex: 1; }
+  .mock-info-name { font-size: 11px; font-weight: 600; margin-bottom: 2px; }
+  .mock-info-sub { font-size: 10px; color: var(--text-xs); }
+  .mock-status {
+    font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 999px;
+  }
+  .mock-status.posted { background: rgba(34,197,94,.12); color: var(--green); }
+  .mock-status.pending { background: rgba(238,77,45,.12); color: var(--orange); }
+  /* Pulse notification */
+  .notif {
+    position: absolute; top: -14px; right: -14px;
+    background: var(--green); color: #fff;
+    font-size: 11px; font-weight: 700;
+    padding: 6px 12px; border-radius: 999px;
+    box-shadow: 0 4px 16px rgba(34,197,94,.4);
+    animation: pulse-notif 2s ease-in-out infinite;
+  }
+  @keyframes pulse-notif {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.06); }
+  }
+
+  /* ── SECTION BASE ── */
+  section { padding: 96px 20px; }
+  .section-label { text-align: center; margin-bottom: 14px; }
+  .section-title {
+    text-align: center; font-size: clamp(28px, 4vw, 42px);
+    font-weight: 900; letter-spacing: -.03em; margin-bottom: 14px;
+  }
+  .section-title span { color: var(--orange); }
+  .section-sub {
+    text-align: center; color: var(--text-s); font-size: 16px;
+    max-width: 540px; margin: 0 auto 56px; line-height: 1.7;
+  }
+
+  /* ── SOCIAL PROOF TICKER ── */
+  .ticker-wrap {
+    background: var(--surface); border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 0; overflow: hidden;
+  }
+  .ticker {
+    display: flex; gap: 0;
+    animation: ticker 28s linear infinite;
+    width: max-content;
+  }
+  .ticker:hover { animation-play-state: paused; }
+  @keyframes ticker {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+  }
+  .ticker-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 0 36px; white-space: nowrap;
+    font-size: 13px; color: var(--text-s); font-weight: 500;
+  }
+  .ticker-item svg { color: var(--orange); flex-shrink: 0; }
+  .ticker-item strong { color: var(--text); }
+
+  /* ── BENEFITS ── */
+  .benefits-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+  }
+  .benefit-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
+    transition: border-color .25s, transform .25s, box-shadow .25s;
+  }
+  .benefit-card:hover {
+    border-color: rgba(238,77,45,.35);
+    transform: translateY(-4px);
+    box-shadow: 0 20px 48px rgba(0,0,0,.3), 0 0 20px rgba(238,77,45,.08);
+  }
+  .benefit-icon {
+    width: 48px; height: 48px; border-radius: 12px;
+    background: rgba(238,77,45,.1);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 18px;
+  }
+  .benefit-icon svg { width: 24px; height: 24px; color: var(--orange); }
+  .benefit-card h3 { font-size: 17px; font-weight: 700; margin-bottom: 10px; }
+  .benefit-card p { font-size: 14px; color: var(--text-s); line-height: 1.7; }
+
+  /* ── HOW IT WORKS ── */
+  .how-bg { background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  @media (max-width: 700px) { .steps { grid-template-columns: 1fr; } }
+  .step {
+    position: relative; text-align: center; padding: 36px 28px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  .step-num {
+    width: 52px; height: 52px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--orange-d), var(--orange));
+    color: #fff; font-size: 22px; font-weight: 900;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 20px;
+    box-shadow: 0 8px 24px rgba(238,77,45,.35);
+  }
+  .step h3 { font-size: 18px; font-weight: 700; margin-bottom: 12px; }
+  .step p { font-size: 14px; color: var(--text-s); line-height: 1.7; }
+  .step-connector {
+    display: none;
+  }
+  @media (min-width: 700px) {
+    .steps { position: relative; align-items: stretch; }
+    .steps::before {
+      content: '';
+      position: absolute; top: 62px; left: calc(33.33% - 12px); right: calc(33.33% - 12px);
+      height: 2px; background: linear-gradient(90deg, var(--orange-d), var(--orange));
+      opacity: .4; z-index: 0;
+    }
+    .step { z-index: 1; }
+  }
+
+  /* ── RESULTS ── */
+  .results-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px; margin-bottom: 56px;
+  }
+  .result-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 28px 24px; text-align: center;
+  }
+  .result-val {
+    font-size: 40px; font-weight: 900; letter-spacing: -.04em;
+    background: linear-gradient(135deg, var(--orange-d), #ff8060);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 8px;
+  }
+  .result-label { font-size: 13px; color: var(--text-s); font-weight: 500; }
+
+  .testimonials { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+  .testimonial {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 24px;
+  }
+  .testimonial-stars { color: #fbbf24; font-size: 15px; margin-bottom: 14px; }
+  .testimonial-text { font-size: 14px; color: var(--text-s); line-height: 1.7; margin-bottom: 18px; font-style: italic; }
+  .testimonial-author { display: flex; align-items: center; gap: 12px; }
+  .author-avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--orange-d), var(--orange));
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 16px; color: #fff; flex-shrink: 0;
+  }
+  .author-name { font-weight: 700; font-size: 14px; }
+  .author-role { font-size: 12px; color: var(--text-xs); }
+
+  /* ── PRICING ── */
+  .pricing-wrap {
+    max-width: 500px; margin: 0 auto;
+    background: var(--surface);
+    border: 1px solid rgba(238,77,45,.3);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 0 60px rgba(238,77,45,.12);
+  }
+  .pricing-badge-top {
+    background: var(--orange); text-align: center;
+    padding: 10px; font-size: 13px; font-weight: 700;
+    letter-spacing: .04em; text-transform: uppercase;
+  }
+  .pricing-inner { padding: 36px 40px; }
+  @media (max-width: 480px) { .pricing-inner { padding: 28px 24px; } }
+  .pricing-name { font-size: 13px; color: var(--text-s); font-weight: 600; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px; }
+  .pricing-price {
+    display: flex; align-items: flex-start; gap: 4px; margin-bottom: 6px;
+  }
+  .price-currency { font-size: 20px; font-weight: 700; color: var(--text-s); margin-top: 8px; }
+  .price-val { font-size: 64px; font-weight: 900; letter-spacing: -.04em; line-height: 1; }
+  .price-cents { font-size: 24px; font-weight: 700; margin-top: 12px; }
+  .pricing-note { font-size: 13px; color: var(--text-s); margin-bottom: 28px; }
+  .pricing-note span { color: var(--green); font-weight: 600; }
+  .pricing-features { list-style: none; display: flex; flex-direction: column; gap: 12px; margin-bottom: 32px; }
+  .pricing-features li {
+    display: flex; align-items: flex-start; gap: 10px;
+    font-size: 14px; line-height: 1.5;
+  }
+  .feat-check {
+    width: 20px; height: 20px; border-radius: 50%;
+    background: rgba(34,197,94,.12); color: var(--green);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 1px;
+  }
+  .feat-check svg { width: 12px; height: 12px; }
+  .btn-buy {
+    width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px;
+    background: var(--orange); color: #fff; border: none; cursor: pointer;
+    font-size: 16px; font-weight: 800; padding: 17px;
+    border-radius: var(--radius); text-decoration: none;
+    box-shadow: 0 8px 32px rgba(238,77,45,.4);
+    transition: background .2s, transform .15s, box-shadow .2s;
+  }
+  .btn-buy:hover {
+    background: var(--orange-h); transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(238,77,45,.5);
+  }
+  .btn-buy svg { width: 20px; height: 20px; }
+  .pricing-guarantee {
+    text-align: center; margin-top: 18px;
+    font-size: 12px; color: var(--text-xs);
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .pricing-guarantee svg { width: 14px; height: 14px; color: var(--green); }
+
+  /* ── FAQ ── */
+  .faq-list { max-width: 700px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+  .faq-item {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden;
+  }
+  .faq-q {
+    width: 100%; display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 24px; background: none; border: none; cursor: pointer;
+    color: var(--text); font-size: 15px; font-weight: 600; text-align: left; gap: 16px;
+    transition: color .2s;
+  }
+  .faq-q:hover { color: var(--orange); }
+  .faq-icon {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--surface3); flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .2s, transform .3s;
+  }
+  .faq-icon svg { width: 14px; height: 14px; color: var(--text-s); transition: color .2s; }
+  .faq-item.open .faq-icon { background: rgba(238,77,45,.15); transform: rotate(45deg); }
+  .faq-item.open .faq-icon svg { color: var(--orange); }
+  .faq-a {
+    max-height: 0; overflow: hidden;
+    transition: max-height .35s ease, padding .3s ease;
+    padding: 0 24px;
+  }
+  .faq-a-inner { padding-bottom: 20px; font-size: 14px; color: var(--text-s); line-height: 1.8; }
+  .faq-item.open .faq-a { max-height: 300px; }
+
+  /* ── FOOTER ── */
+  footer {
+    background: var(--surface); border-top: 1px solid var(--border);
+    padding: 48px 20px 32px;
+  }
+  .footer-inner {
+    max-width: 1100px; margin: 0 auto;
+    display: flex; flex-wrap: wrap; gap: 40px; justify-content: space-between; margin-bottom: 36px;
+  }
+  .footer-brand .logo { margin-bottom: 14px; display: inline-flex; }
+  .footer-desc { font-size: 13px; color: var(--text-s); max-width: 260px; line-height: 1.7; }
+  .footer-col h4 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--text-xs); margin-bottom: 14px; }
+  .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+  .footer-col ul a { color: var(--text-s); text-decoration: none; font-size: 13px; transition: color .2s; }
+  .footer-col ul a:hover { color: var(--text); }
+  .footer-bottom {
+    max-width: 1100px; margin: 0 auto;
+    display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;
+    gap: 12px; padding-top: 24px; border-top: 1px solid var(--border);
+    font-size: 12px; color: var(--text-xs);
+  }
+  .footer-disclaimer { font-size: 11px; color: var(--text-xs); max-width: 600px; line-height: 1.6; }
+
+  /* ── SCROLL ANIMATIONS ── */
+  .reveal {
+    opacity: 0; transform: translateY(28px);
+    transition: opacity .6s ease, transform .6s ease;
+  }
+  .reveal.visible { opacity: 1; transform: none; }
+  .reveal-delay-1 { transition-delay: .1s; }
+  .reveal-delay-2 { transition-delay: .2s; }
+  .reveal-delay-3 { transition-delay: .3s; }
+
+  /* ── MODAL PIX ── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; z-index: 200;
+    background: rgba(0,0,0,.75); backdrop-filter: blur(6px);
+    align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 20px; padding: 36px; max-width: 400px; width: 100%;
+    text-align: center; position: relative;
+    animation: modal-in .3s ease;
+  }
+  @keyframes modal-in {
+    from { opacity: 0; transform: scale(.94) translateY(12px); }
+    to   { opacity: 1; transform: none; }
+  }
+  .modal-close {
+    position: absolute; top: 14px; right: 14px;
+    background: var(--surface3); border: none; cursor: pointer;
+    width: 32px; height: 32px; border-radius: 50%;
+    color: var(--text-s); display: flex; align-items: center; justify-content: center;
+    transition: background .2s;
+  }
+  .modal-close:hover { background: var(--border); }
+  .modal h3 { font-size: 20px; font-weight: 800; margin-bottom: 6px; }
+  .modal p { font-size: 14px; color: var(--text-s); margin-bottom: 24px; }
+  .qr-box {
+    width: 180px; height: 180px; margin: 0 auto 20px;
+    background: #fff; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    padding: 12px;
+  }
+  .qr-box svg { width: 100%; height: 100%; }
+  .pix-key-box {
+    background: var(--surface3); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px; margin-bottom: 20px;
+  }
+  .pix-key-label { font-size: 11px; color: var(--text-xs); margin-bottom: 4px; }
+  .pix-key-val { font-size: 14px; font-weight: 700; word-break: break-all; }
+  .btn-copy {
+    width: 100%; padding: 12px; border-radius: 10px;
+    background: var(--surface3); border: 1px solid var(--border);
+    color: var(--text); font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: background .2s;
+  }
+  .btn-copy:hover { background: var(--border); }
+  .modal-after { font-size: 12px; color: var(--text-xs); margin-top: 14px; line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<nav>
+  <div class="nav-inner">
+    <a href="#" class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>
+      </div>
+      Shopee Bot
+    </a>
+    <nav class="nav-links">
+      <a href="#beneficios">Benefícios</a>
+      <a href="#como-funciona">Como Funciona</a>
+      <a href="#resultados">Resultados</a>
+      <a href="#preco">Preço</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <a href="#preco" class="btn-nav">Comprar Agora →</a>
+  </div>
+</nav>
+
+<!-- ── HERO ── -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-inner">
+    <div>
+      <div class="hero-label">
+        <span class="tag">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          Automação com IA
+        </span>
+      </div>
+      <h1>Ganhe dinheiro com Shopee <span>no piloto automático</span></h1>
+      <p class="hero-sub">
+        O bot encontra os melhores produtos, cria copy viral com IA e posta automaticamente no TikTok e Shopee Vídeos — enquanto você dorme.
+      </p>
+      <div class="hero-cta">
+        <a href="#preco" class="btn-primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          Quero Começar Agora
+        </a>
+        <a href="#como-funciona" class="btn-ghost">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+          Ver como funciona
+        </a>
+      </div>
+      <div class="hero-badges">
+        <span class="badge"><span class="dot"></span>100 produtos/dia automático</span>
+        <span class="badge"><span class="dot"></span>IA Claude integrada</span>
+        <span class="badge"><span class="dot"></span>Posts 9h • 13h • 20h</span>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div style="position:relative;">
+        <div class="notif">+R$127 hoje 🔥</div>
+        <div class="dashboard-mock">
+          <div class="mock-header">
+            <div class="mock-dot" style="background:#ff5f57"></div>
+            <div class="mock-dot" style="background:#febc2e"></div>
+            <div class="mock-dot" style="background:#28c840"></div>
+            <span class="mock-title">Dashboard — Shopee Bot</span>
+          </div>
+          <div class="mock-kpis">
+            <div class="mock-kpi">
+              <div class="mock-kpi-label">Ganho estimado</div>
+              <div class="mock-kpi-val green">R$389</div>
+            </div>
+            <div class="mock-kpi">
+              <div class="mock-kpi-label">Produtos hoje</div>
+              <div class="mock-kpi-val orange">94</div>
+            </div>
+            <div class="mock-kpi">
+              <div class="mock-kpi-label">Posts publicados</div>
+              <div class="mock-kpi-val" style="color:#a78bfa">23</div>
+            </div>
+            <div class="mock-kpi">
+              <div class="mock-kpi-label">Comissão média</div>
+              <div class="mock-kpi-val green">8.4%</div>
+            </div>
+          </div>
+          <div class="mock-list">
+            <div class="mock-row">
+              <div class="mock-thumb"></div>
+              <div class="mock-info">
+                <div class="mock-info-name">Air Fryer 4L Mondial</div>
+                <div class="mock-info-sub">Comissão: 9.2% • R$18,40</div>
+              </div>
+              <span class="mock-status posted">Postado</span>
+            </div>
+            <div class="mock-row">
+              <div class="mock-thumb" style="background:linear-gradient(135deg,#7c3aed,#a78bfa)"></div>
+              <div class="mock-info">
+                <div class="mock-info-name">Fone Bluetooth JBL</div>
+                <div class="mock-info-sub">Comissão: 7.8% • R$9,20</div>
+              </div>
+              <span class="mock-status posted">Postado</span>
+            </div>
+            <div class="mock-row">
+              <div class="mock-thumb" style="background:linear-gradient(135deg,#0891b2,#22d3ee)"></div>
+              <div class="mock-info">
+                <div class="mock-info-name">Smartwatch W29 Pro</div>
+                <div class="mock-info-sub">Comissão: 11.5% • R$22,10</div>
+              </div>
+              <span class="mock-status pending">Agendado</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── TICKER ── -->
+<div class="ticker-wrap" aria-hidden="true">
+  <div class="ticker">
+    <!-- duplicado para loop infinito -->
+    <span class="ticker-item"><svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg><strong>R$389</strong> ganhos hoje por um usuário em SP</span>
+    <span class="ticker-item"><svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>Produto viral gerado em <strong>4 segundos</strong> com IA</span>
+    <span class="ticker-item"><svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg><strong>3 posts automáticos</strong> por dia — 9h, 13h e 20h</span>
+    <span class="ticker-item"><svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg><strong>Licença vinculada</strong> ao seu computador — segurança total</span>
+    <span class="ticker-item"><svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>Chave entregue por <strong>email automático</strong> após PIX</span>
+    <span class="ticker-item"><svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg><strong>+200 afiliados</strong> já usam o bot no Brasil</span>
+    <!-- duplicado -->
+    <span class="ticker-item"><svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg><strong>R$389</strong> ganhos hoje por um usuário em SP</span>
+    <span class="ticker-item"><svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>Produto viral gerado em <strong>4 segundos</strong> com IA</span>
+    <span class="ticker-item"><svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg><strong>3 posts automáticos</strong> por dia — 9h, 13h e 20h</span>
+    <span class="ticker-item"><svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg><strong>Licença vinculada</strong> ao seu computador — segurança total</span>
+    <span class="ticker-item"><svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>Chave entregue por <strong>email automático</strong> após PIX</span>
+    <span class="ticker-item"><svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg><strong>+200 afiliados</strong> já usam o bot no Brasil</span>
+  </div>
+</div>
+
+<!-- ── BENEFITS ── -->
+<section id="beneficios">
+  <div class="container">
+    <div class="section-label reveal"><span class="tag">Por que usar</span></div>
+    <h2 class="section-title reveal reveal-delay-1">Tudo que você precisa para <span>escalar seus ganhos</span></h2>
+    <p class="section-sub reveal reveal-delay-2">Do scraping ao post, o bot faz tudo sozinho. Você só acompanha os ganhos chegando.</p>
+    <div class="benefits-grid">
+      <div class="benefit-card reveal">
+        <div class="benefit-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        </div>
+        <h3>Scraping de 100 Produtos/Dia</h3>
+        <p>O bot varre o portal de afiliados Shopee automaticamente, filtrando pelos produtos com maior comissão e potencial viral.</p>
+      </div>
+      <div class="benefit-card reveal reveal-delay-1">
+        <div class="benefit-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 6v6l4 2"/><path d="M18 2v4h4"/></svg>
+        </div>
+        <h3>Copy Viral Gerada por IA</h3>
+        <p>Integrado ao Claude, o bot cria overlay, legenda e hashtags otimizados para viralizar no TikTok e Shopee Vídeos automaticamente.</p>
+      </div>
+      <div class="benefit-card reveal reveal-delay-2">
+        <div class="benefit-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        </div>
+        <h3>Dashboard em Tempo Real</h3>
+        <p>Acompanhe ganhos estimados, produtos processados e histórico de posts no dashboard Streamlit — tudo num só lugar.</p>
+      </div>
+      <div class="benefit-card reveal">
+        <div class="benefit-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.77a16 16 0 0 0 6.29 6.29l.96-.85a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7a2 2 0 0 1 1.72 2.01z"/></svg>
+        </div>
+        <h3>Notificação no WhatsApp</h3>
+        <p>Receba no seu WhatsApp o copy completo de cada produto pronto para postar — com link de afiliado já embutido.</p>
+      </div>
+      <div class="benefit-card reveal reveal-delay-1">
+        <div class="benefit-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <h3>Links com SubID Rastreado</h3>
+        <p>Cada link de afiliado é gerado com SubID personalizado por produto e rede social, facilitando o acompanhamento das conversões.</p>
+      </div>
+      <div class="benefit-card reveal reveal-delay-2">
+        <div class="benefit-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <h3>Agendamento 9h • 13h • 20h</h3>
+        <p>Posts agendados nos melhores horários do dia, todos os dias, sem você precisar lembrar de nada. Coloque para rodar e esqueça.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── HOW IT WORKS ── -->
+<section id="como-funciona" class="how-bg">
+  <div class="container">
+    <div class="section-label reveal"><span class="tag">Passo a passo</span></div>
+    <h2 class="section-title reveal reveal-delay-1">Em <span>3 passos</span> o bot já está trabalhando por você</h2>
+    <p class="section-sub reveal reveal-delay-2">Configuração única de 10 minutos. Depois é só acompanhar os ganhos.</p>
+    <div class="steps">
+      <div class="step reveal">
+        <div class="step-num">1</div>
+        <h3>Configure suas credenciais</h3>
+        <p>Insira sua conta Shopee Afiliados, chave da API de IA e token TikTok no arquivo <code style="background:var(--surface3);padding:2px 6px;border-radius:4px;font-size:12px">.env</code>. Processo de 10 minutos, feito uma única vez.</p>
+      </div>
+      <div class="step reveal reveal-delay-1">
+        <div class="step-num">2</div>
+        <h3>Ative o bot e o agendador</h3>
+        <p>Clique em "Executar Pipeline" no painel ou deixe o agendador automático rodar. O bot busca produtos, gera copy viral e agenda os posts.</p>
+      </div>
+      <div class="step reveal reveal-delay-2">
+        <div class="step-num">3</div>
+        <h3>Receba comissões no automático</h3>
+        <p>Posts publicados 3x por dia, links rastreados com SubID. Você acompanha tudo no dashboard e recebe notificações no WhatsApp.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── RESULTS ── -->
+<section id="resultados">
+  <div class="container">
+    <div class="section-label reveal"><span class="tag">Resultados reais</span></div>
+    <h2 class="section-title reveal reveal-delay-1">Números que <span>falam por si</span></h2>
+    <p class="section-sub reveal reveal-delay-2">Usuários reais, resultados verificados. Sem promessas mirabolantes — dados concretos.</p>
+    <div class="results-grid">
+      <div class="result-card reveal">
+        <div class="result-val">100+</div>
+        <div class="result-label">Produtos processados por dia</div>
+      </div>
+      <div class="result-card reveal reveal-delay-1">
+        <div class="result-val">3x</div>
+        <div class="result-label">Posts automáticos diários</div>
+      </div>
+      <div class="result-card reveal reveal-delay-2">
+        <div class="result-val">4s</div>
+        <div class="result-label">Para gerar copy viral com IA</div>
+      </div>
+      <div class="result-card reveal reveal-delay-3">
+        <div class="result-val">R$0</div>
+        <div class="result-label">Custo de manutenção após ativar</div>
+      </div>
+    </div>
+    <div class="testimonials">
+      <div class="testimonial reveal">
+        <div class="testimonial-stars">★★★★★</div>
+        <p class="testimonial-text">"Comecei sem saber nada de afiliados. Em 3 semanas o bot já estava gerando R$230 por mês sem eu fazer nada. Vale cada centavo."</p>
+        <div class="testimonial-author">
+          <div class="author-avatar">L</div>
+          <div>
+            <div class="author-name">Lucas M.</div>
+            <div class="author-role">Afiliado Shopee • São Paulo, SP</div>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial reveal reveal-delay-1">
+        <div class="testimonial-stars">★★★★★</div>
+        <p class="testimonial-text">"Eu tentava fazer post manual e não ia. Com o bot, são 3 posts por dia no horário certo. Minha renda de afiliado triplicou em 45 dias."</p>
+        <div class="testimonial-author">
+          <div class="author-avatar">P</div>
+          <div>
+            <div class="author-name">Priscila R.</div>
+            <div class="author-role">Criadora de Conteúdo • Fortaleza, CE</div>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial reveal reveal-delay-2">
+        <div class="testimonial-stars">★★★★★</div>
+        <p class="testimonial-text">"Setup rápido, suporte no WhatsApp resolveu minhas dúvidas em minutos. Já na primeira semana vi os primeiros ganhos caindo. Recomendo demais."</p>
+        <div class="testimonial-author">
+          <div class="author-avatar">R</div>
+          <div>
+            <div class="author-name">Rafael S.</div>
+            <div class="author-role">Empreendedor Digital • Curitiba, PR</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── PRICING ── -->
+<section id="preco" style="background:var(--surface);border-top:1px solid var(--border);">
+  <div class="container">
+    <div class="section-label reveal"><span class="tag">Oferta única</span></div>
+    <h2 class="section-title reveal reveal-delay-1">Investimento <span>único</span>, ganhos para sempre</h2>
+    <p class="section-sub reveal reveal-delay-2">Sem assinatura mensal. Pague uma vez e use para sempre no seu computador.</p>
+    <div class="pricing-wrap reveal reveal-delay-1">
+      <div class="pricing-badge-top">🔥 Oferta por tempo limitado — Vagas abertas</div>
+      <div class="pricing-inner">
+        <div class="pricing-name">Shopee Affiliate Bot — Licença Vitalícia</div>
+        <div class="pricing-price">
+          <span class="price-currency">R$</span>
+          <span class="price-val">79</span>
+          <span class="price-cents">,90</span>
+        </div>
+        <div class="pricing-note">Pagamento único via PIX • <span>Entrega imediata por email</span></div>
+        <ul class="pricing-features">
+          <li>
+            <span class="feat-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span>
+            <span>Bot completo com scraping + IA + agendador</span>
+          </li>
+          <li>
+            <span class="feat-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span>
+            <span>Dashboard Streamlit com métricas em tempo real</span>
+          </li>
+          <li>
+            <span class="feat-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span>
+            <span>Notificações no WhatsApp com copy pronto</span>
+          </li>
+          <li>
+            <span class="feat-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span>
+            <span>Posts automáticos no TikTok e Shopee Vídeos</span>
+          </li>
+          <li>
+            <span class="feat-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span>
+            <span>Licença vitalícia vinculada ao seu PC</span>
+          </li>
+          <li>
+            <span class="feat-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span>
+            <span>Suporte via WhatsApp (21) 99792-7927</span>
+          </li>
+          <li>
+            <span class="feat-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span>
+            <span>Atualizações gratuitas por 12 meses</span>
+          </li>
+        </ul>
+        <label style="display:flex;align-items:flex-start;gap:10px;margin-bottom:14px;cursor:pointer;font-size:12px;color:var(--text-xs);line-height:1.5;">
+          <input type="checkbox" id="accept-terms" style="margin-top:2px;accent-color:#ee4d2d;width:15px;height:15px;flex-shrink:0;" />
+          Li e aceito os <a href="#termos" style="color:#ee4d2d;text-decoration:underline;" onclick="document.getElementById('modal-termos').classList.add('open');return false;">Termos de Uso</a>. Estou ciente de que sou responsável pelo uso do software em conformidade com os termos das plataformas de terceiros (Shopee, TikTok).
+        </label>
+        <button class="btn-buy" onclick="abrirModalPix()">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.06 11.57c-.7-.71-1.67-1.1-2.67-1.1H5.93L8 8.4 6.6 7 3 10.6 6.6 14.2 8 12.8l-2.07-2.07h8.46c.56 0 1.08.22 1.47.6l3.27 3.27c.78.78.78 2.05 0 2.83l-2.44 2.44c-.39.39-.9.6-1.45.6s-1.06-.21-1.45-.6l-1.59-1.6-1.41 1.42 1.59 1.6c.76.76 1.77 1.18 2.86 1.18s2.1-.42 2.86-1.18l2.44-2.44c1.57-1.57 1.57-4.13 0-5.7l-3.28-3.27z"/><path d="M6.94 12.43c.7.71 1.67 1.1 2.67 1.1h8.46l-2.07 2.07 1.41 1.41L21 13.4 17.4 9.8 16 11.2l2.07 2.07H9.61c-.56 0-1.08-.22-1.47-.6L4.87 9.4c-.78-.78-.78-2.05 0-2.83l2.44-2.44c.39-.39.9-.6 1.45-.6s1.06.21 1.45.6l1.59 1.59 1.41-1.41-1.59-1.6C10.86 1.95 9.85 1.53 8.76 1.53s-2.1.42-2.86 1.18L3.46 5.15c-1.57 1.57-1.57 4.13 0 5.7l3.48 3.58z"/></svg>
+          Pagar com PIX — R$79,90
+        </button>
+        <div class="pricing-guarantee">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Chave de licença entregue em até 5 minutos após o pagamento
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FAQ ── -->
+<section id="faq">
+  <div class="container">
+    <div class="section-label reveal"><span class="tag">Dúvidas frequentes</span></div>
+    <h2 class="section-title reveal reveal-delay-1">Perguntas <span>frequentes</span></h2>
+    <p class="section-sub reveal reveal-delay-2">Tudo que você precisa saber antes de comprar.</p>
+    <div class="faq-list">
+      <div class="faq-item reveal">
+        <button class="faq-q" aria-expanded="false">
+          Preciso saber programar para usar o bot?
+          <span class="faq-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>
+        </button>
+        <div class="faq-a"><div class="faq-a-inner">Não. O bot vem com um instalador e um painel visual. Basta preencher suas credenciais no arquivo de configuração (um tutorial em vídeo é enviado junto com a licença) e clicar em "Executar". Nenhum conhecimento técnico é necessário.</div></div>
+      </div>
+      <div class="faq-item reveal reveal-delay-1">
+        <button class="faq-q" aria-expanded="false">
+          O bot funciona no meu computador Windows?
+          <span class="faq-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>
+        </button>
+        <div class="faq-a"><div class="faq-a-inner">Sim. O bot é distribuído como executável .exe para Windows 10/11. Após a ativação da licença, ele fica vinculado ao seu computador (proteção anti-pirataria). Não funciona em Mac ou Linux nesta versão.</div></div>
+      </div>
+      <div class="faq-item reveal reveal-delay-2">
+        <button class="faq-q" aria-expanded="false">
+          Preciso ter conta Shopee Afiliados aprovada?
+          <span class="faq-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>
+        </button>
+        <div class="faq-a"><div class="faq-a-inner">Sim. O bot automatiza o processo de afiliado, mas você precisa ter uma conta aprovada em affiliate.shopee.com.br. O cadastro é gratuito e a aprovação costuma ser rápida. Sem conta de afiliado, não há links para gerar comissão.</div></div>
+      </div>
+      <div class="faq-item reveal">
+        <button class="faq-q" aria-expanded="false">
+          Como recebo a licença após o pagamento?
+          <span class="faq-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>
+        </button>
+        <div class="faq-a"><div class="faq-a-inner">Automaticamente! Assim que o pagamento PIX é confirmado, nosso sistema gera sua chave de licença única e envia por email em até 5 minutos. Você receberá também o link de download do instalador e um tutorial de ativação.</div></div>
+      </div>
+      <div class="faq-item reveal reveal-delay-1">
+        <button class="faq-q" aria-expanded="false">
+          O bot posta vídeos automaticamente no TikTok?
+          <span class="faq-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>
+        </button>
+        <div class="faq-a"><div class="faq-a-inner">Sim, via TikTok Content Posting API. Você precisa ter sua conta TikTok conectada e fornecer o token de acesso nas configurações. O bot baixa vídeos dos produtos, gera a legenda com IA e publica automaticamente nos horários programados (9h, 13h e 20h).</div></div>
+      </div>
+      <div class="faq-item reveal reveal-delay-2">
+        <button class="faq-q" aria-expanded="false">
+          Tem mensalidade ou é pagamento único?
+          <span class="faq-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>
+        </button>
+        <div class="faq-a"><div class="faq-a-inner">Pagamento único de R$79,90. Licença vitalícia sem mensalidade. As atualizações são gratuitas por 12 meses após a compra. Após esse período, atualizações maiores poderão ter custo reduzido para quem já é cliente.</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <a href="#" class="logo">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24" fill="#fff"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>
+        </div>
+        Shopee Bot
+      </a>
+      <p class="footer-desc">Automação de marketing de afiliados com inteligência artificial. Ganhe mais, trabalhe menos.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Produto</h4>
+      <ul>
+        <li><a href="#beneficios">Benefícios</a></li>
+        <li><a href="#como-funciona">Como Funciona</a></li>
+        <li><a href="#resultados">Resultados</a></li>
+        <li><a href="#preco">Preço</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Suporte</h4>
+      <ul>
+        <li><a href="#faq">FAQ</a></li>
+        <li><a href="https://wa.me/5521997927927">WhatsApp</a></li>
+        <li><a href="mailto:herlison14@gmail.com">Email</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Legal</h4>
+      <ul>
+        <li><a href="#termos" onclick="document.getElementById('modal-termos').classList.add('open');return false;">Termos de Uso</a></li>
+        <li><a href="#">Política de Privacidade</a></li>
+        <li><a href="#">Licença de Uso</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2026 Shopee Affiliate Bot. Todos os direitos reservados.</span>
+    <span class="footer-disclaimer">Este software é uma ferramenta de automação independente e não possui afiliação oficial com a Shopee. Os resultados apresentados são baseados em casos reais de usuários e podem variar.</span>
+  </div>
+</footer>
+
+<!-- ── MODAL TERMOS ── -->
+<div class="modal-overlay" id="modal-termos" role="dialog" aria-modal="true" aria-label="Termos de Uso" style="z-index:1100;">
+  <div class="modal" style="max-height:80vh;overflow-y:auto;">
+    <button class="modal-close" onclick="document.getElementById('modal-termos').classList.remove('open')" aria-label="Fechar">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <h3 id="termos">Termos de Uso</h3>
+    <div style="font-size:13px;color:var(--text-s);line-height:1.8;text-align:left;">
+      <p><strong>1. Aceitação dos Termos</strong><br>
+      Ao adquirir e utilizar o Shopee Affiliate Bot ("Software"), você declara ter lido, compreendido e concordado com estes Termos de Uso.</p>
+
+      <p><strong>2. Licença de Uso</strong><br>
+      O Software é licenciado para uso pessoal e intransferível. A licença é válida por 12 meses a partir da data de ativação e fica vinculada a um único computador.</p>
+
+      <p><strong>3. Responsabilidade do Usuário</strong><br>
+      O usuário é integralmente responsável pelo uso do Software em conformidade com os Termos de Serviço das plataformas de terceiros (Shopee, TikTok, Mercado Livre, entre outras). O desenvolvedor do Software não possui qualquer vínculo oficial com essas plataformas e não se responsabiliza por suspensões, banimentos ou quaisquer penalidades impostas pelas mesmas em decorrência do uso do Software.</p>
+
+      <p><strong>4. Isenção de Garantias</strong><br>
+      O Software é fornecido "no estado em que se encontra", sem garantias de resultados financeiros específicos. Os ganhos demonstrados são baseados em casos reais de usuários e podem variar significativamente conforme o nicho, esforço e condições de mercado.</p>
+
+      <p><strong>5. Limitação de Responsabilidade</strong><br>
+      Em nenhuma hipótese o desenvolvedor será responsabilizado por danos indiretos, lucros cessantes ou perda de receita decorrentes do uso ou impossibilidade de uso do Software.</p>
+
+      <p><strong>6. Política de Reembolso</strong><br>
+      Não há reembolso após a entrega da chave de licença, uma vez que se trata de produto digital com acesso imediato.</p>
+
+      <p><strong>7. Atualizações</strong><br>
+      Atualizações gratuitas são fornecidas por 12 meses. O desenvolvedor se reserva o direito de alterar funcionalidades conforme mudanças nas plataformas de terceiros.</p>
+
+      <p><strong>8. Contato</strong><br>
+      Suporte via WhatsApp: (21) 99792-7927 | herlison14@gmail.com</p>
+
+      <p style="font-size:11px;color:var(--text-xs);">Última atualização: março de 2026</p>
+    </div>
+    <button class="btn-copy" onclick="document.getElementById('modal-termos').classList.remove('open')" style="margin-top:16px;">Entendi e Aceito</button>
+  </div>
+</div>
+
+<!-- ── MODAL PIX ── -->
+<div class="modal-overlay" id="modal-pix" role="dialog" aria-modal="true" aria-label="Pagamento via PIX">
+  <div class="modal">
+    <button class="modal-close" onclick="document.getElementById('modal-pix').classList.remove('open')" aria-label="Fechar">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <h3>Pague via PIX</h3>
+    <p>Informe seu email para receber a licença automaticamente após o pagamento.</p>
+
+    <input type="email" id="pix-email-input" placeholder="seu@email.com" style="width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid #333;background:#1a1a1a;color:#fff;font-size:15px;margin-bottom:12px;box-sizing:border-box;" />
+    <button class="btn-copy" id="btn-pagar" onclick="gerarQrPix()">
+      <span id="gerar-label">Pagar R$79,90 via PIX</span>
+    </button>
+    <p id="pix-email-erro" style="color:#ff6b6b;font-size:13px;margin-top:8px;display:none;">Informe um email válido.</p>
+    <p class="modal-after">Você será redirecionado para o checkout seguro do Mercado Pago. Após o pagamento, a licença é enviada automaticamente para seu email em <strong>até 5 minutos</strong>.</p>
+  </div>
+</div>
+
+<script>
+  // ── Scroll Reveal ──────────────────────────────────────────────────────────
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.12 });
+
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  // ── FAQ accordion ──────────────────────────────────────────────────────────
+  document.querySelectorAll('.faq-q').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const item = btn.closest('.faq-item');
+      const isOpen = item.classList.contains('open');
+      document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+      if (!isOpen) item.classList.add('open');
+      btn.setAttribute('aria-expanded', !isOpen);
+    });
+  });
+
+  // ── Modal Termos ──────────────────────────────────────────────────────────
+  document.getElementById('modal-termos').addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('open');
+  });
+
+  function abrirModalPix() {
+    if (!document.getElementById('accept-terms').checked) {
+      alert('Você precisa aceitar os Termos de Uso para continuar.');
+      return;
+    }
+    document.getElementById('modal-pix').classList.add('open');
+  }
+
+  // ── PIX via Mercado Pago ───────────────────────────────────────────────────
+  const SERVER_URL = 'https://shopee-license-server-production.up.railway.app';
+
+  async function gerarQrPix() {
+    const email = document.getElementById('pix-email-input').value.trim();
+    const erro = document.getElementById('pix-email-erro');
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      erro.style.display = 'block';
+      return;
+    }
+    erro.style.display = 'none';
+    const btn = document.getElementById('btn-pagar');
+    const label = document.getElementById('gerar-label');
+    btn.disabled = true;
+    label.textContent = 'Aguarde...';
+
+    try {
+      const resp = await fetch(`${SERVER_URL}/payment/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      if (!resp.ok) throw new Error('Erro no servidor');
+      const data = await resp.json();
+      window.open(data.init_point, '_blank');
+      resetModal();
+    } catch (e) {
+      label.textContent = 'Erro. Tente novamente.';
+      btn.disabled = false;
+    }
+  }
+
+  // Resetar modal ao fechar
+  document.getElementById('modal-pix').addEventListener('click', function(e) {
+    if (e.target === this) resetModal();
+  });
+  document.querySelector('.modal-close').addEventListener('click', resetModal);
+
+  function resetModal() {
+    document.getElementById('modal-pix').classList.remove('open');
+    document.getElementById('pix-email-input').value = '';
+    document.getElementById('gerar-label').textContent = 'Pagar R$79,90 via PIX';
+    document.getElementById('btn-pagar').disabled = false;
+    document.getElementById('pix-email-erro').style.display = 'none';
+  }
+
+  // ── Animated counter ──────────────────────────────────────────────────────
+  function animateCount(el, target, suffix = '') {
+    let start = 0;
+    const duration = 1600;
+    const step = (timestamp) => {
+      if (!start) start = timestamp;
+      const progress = Math.min((timestamp - start) / duration, 1);
+      const ease = 1 - Math.pow(1 - progress, 3);
+      el.textContent = Math.round(ease * target) + suffix;
+      if (progress < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+
+  const countersObs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const vals = e.target.querySelectorAll('.result-val');
+        const data = [100, 3, 4, 0];
+        const suffixes = ['+', 'x', 's', ''];
+        vals.forEach((v, i) => animateCount(v, data[i], suffixes[i]));
+        countersObs.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.3 });
+
+  const resultsGrid = document.querySelector('.results-grid');
+  if (resultsGrid) countersObs.observe(resultsGrid);
+</script>
+</body>
+</html>

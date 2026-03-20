@@ -859,7 +859,11 @@
             <span>Atualizações gratuitas por 12 meses</span>
           </li>
         </ul>
-        <button class="btn-buy" onclick="document.getElementById('modal-pix').classList.add('open')">
+        <label style="display:flex;align-items:flex-start;gap:10px;margin-bottom:14px;cursor:pointer;font-size:12px;color:var(--text-xs);line-height:1.5;">
+          <input type="checkbox" id="accept-terms" style="margin-top:2px;accent-color:#ee4d2d;width:15px;height:15px;flex-shrink:0;" />
+          Li e aceito os <a href="#termos" style="color:#ee4d2d;text-decoration:underline;" onclick="document.getElementById('modal-termos').classList.add('open');return false;">Termos de Uso</a>. Estou ciente de que sou responsável pelo uso do software em conformidade com os termos das plataformas de terceiros (Shopee, TikTok).
+        </label>
+        <button class="btn-buy" onclick="abrirModalPix()">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.06 11.57c-.7-.71-1.67-1.1-2.67-1.1H5.93L8 8.4 6.6 7 3 10.6 6.6 14.2 8 12.8l-2.07-2.07h8.46c.56 0 1.08.22 1.47.6l3.27 3.27c.78.78.78 2.05 0 2.83l-2.44 2.44c-.39.39-.9.6-1.45.6s-1.06-.21-1.45-.6l-1.59-1.6-1.41 1.42 1.59 1.6c.76.76 1.77 1.18 2.86 1.18s2.1-.42 2.86-1.18l2.44-2.44c1.57-1.57 1.57-4.13 0-5.7l-3.28-3.27z"/><path d="M6.94 12.43c.7.71 1.67 1.1 2.67 1.1h8.46l-2.07 2.07 1.41 1.41L21 13.4 17.4 9.8 16 11.2l2.07 2.07H9.61c-.56 0-1.08-.22-1.47-.6L4.87 9.4c-.78-.78-.78-2.05 0-2.83l2.44-2.44c.39-.39.9-.6 1.45-.6s1.06.21 1.45.6l1.59 1.59 1.41-1.41-1.59-1.6C10.86 1.95 9.85 1.53 8.76 1.53s-2.1.42-2.86 1.18L3.46 5.15c-1.57 1.57-1.57 4.13 0 5.7l3.48 3.58z"/></svg>
           Pagar com PIX — R$79,90
         </button>
@@ -957,7 +961,7 @@
     <div class="footer-col">
       <h4>Legal</h4>
       <ul>
-        <li><a href="#">Termos de Uso</a></li>
+        <li><a href="#termos" onclick="document.getElementById('modal-termos').classList.add('open');return false;">Termos de Uso</a></li>
         <li><a href="#">Política de Privacidade</a></li>
         <li><a href="#">Licença de Uso</a></li>
       </ul>
@@ -968,6 +972,44 @@
     <span class="footer-disclaimer">Este software é uma ferramenta de automação independente e não possui afiliação oficial com a Shopee. Os resultados apresentados são baseados em casos reais de usuários e podem variar.</span>
   </div>
 </footer>
+
+<!-- ── MODAL TERMOS ── -->
+<div class="modal-overlay" id="modal-termos" role="dialog" aria-modal="true" aria-label="Termos de Uso" style="z-index:1100;">
+  <div class="modal" style="max-height:80vh;overflow-y:auto;">
+    <button class="modal-close" onclick="document.getElementById('modal-termos').classList.remove('open')" aria-label="Fechar">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <h3 id="termos">Termos de Uso</h3>
+    <div style="font-size:13px;color:var(--text-s);line-height:1.8;text-align:left;">
+      <p><strong>1. Aceitação dos Termos</strong><br>
+      Ao adquirir e utilizar o Shopee Affiliate Bot ("Software"), você declara ter lido, compreendido e concordado com estes Termos de Uso.</p>
+
+      <p><strong>2. Licença de Uso</strong><br>
+      O Software é licenciado para uso pessoal e intransferível. A licença é válida por 12 meses a partir da data de ativação e fica vinculada a um único computador.</p>
+
+      <p><strong>3. Responsabilidade do Usuário</strong><br>
+      O usuário é integralmente responsável pelo uso do Software em conformidade com os Termos de Serviço das plataformas de terceiros (Shopee, TikTok, Mercado Livre, entre outras). O desenvolvedor do Software não possui qualquer vínculo oficial com essas plataformas e não se responsabiliza por suspensões, banimentos ou quaisquer penalidades impostas pelas mesmas em decorrência do uso do Software.</p>
+
+      <p><strong>4. Isenção de Garantias</strong><br>
+      O Software é fornecido "no estado em que se encontra", sem garantias de resultados financeiros específicos. Os ganhos demonstrados são baseados em casos reais de usuários e podem variar significativamente conforme o nicho, esforço e condições de mercado.</p>
+
+      <p><strong>5. Limitação de Responsabilidade</strong><br>
+      Em nenhuma hipótese o desenvolvedor será responsabilizado por danos indiretos, lucros cessantes ou perda de receita decorrentes do uso ou impossibilidade de uso do Software.</p>
+
+      <p><strong>6. Política de Reembolso</strong><br>
+      Não há reembolso após a entrega da chave de licença, uma vez que se trata de produto digital com acesso imediato.</p>
+
+      <p><strong>7. Atualizações</strong><br>
+      Atualizações gratuitas são fornecidas por 12 meses. O desenvolvedor se reserva o direito de alterar funcionalidades conforme mudanças nas plataformas de terceiros.</p>
+
+      <p><strong>8. Contato</strong><br>
+      Suporte via WhatsApp: (21) 99792-7927 | herlison14@gmail.com</p>
+
+      <p style="font-size:11px;color:var(--text-xs);">Última atualização: março de 2026</p>
+    </div>
+    <button class="btn-copy" onclick="document.getElementById('modal-termos').classList.remove('open')" style="margin-top:16px;">Entendi e Aceito</button>
+  </div>
+</div>
 
 <!-- ── MODAL PIX ── -->
 <div class="modal-overlay" id="modal-pix" role="dialog" aria-modal="true" aria-label="Pagamento via PIX">
@@ -1010,6 +1052,19 @@
       btn.setAttribute('aria-expanded', !isOpen);
     });
   });
+
+  // ── Modal Termos ──────────────────────────────────────────────────────────
+  document.getElementById('modal-termos').addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('open');
+  });
+
+  function abrirModalPix() {
+    if (!document.getElementById('accept-terms').checked) {
+      alert('Você precisa aceitar os Termos de Uso para continuar.');
+      return;
+    }
+    document.getElementById('modal-pix').classList.add('open');
+  }
 
   // ── PIX via Mercado Pago ───────────────────────────────────────────────────
   const SERVER_URL = 'https://shopee-license-server-production.up.railway.app';

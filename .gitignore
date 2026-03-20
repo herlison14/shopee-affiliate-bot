@@ -5,3 +5,13 @@ logs/
 __pycache__/
 *.pyc
 .DS_Store
+
+# Chaves RSA — NUNCA subir para o GitHub
+license_server/keys/private.pem
+license_server/keys/public.pem
+license_server/.env
+license_server/licenses.db
+
+# Build artifacts
+dist/
+*.spec.bak

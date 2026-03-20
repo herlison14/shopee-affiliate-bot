@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: shopee-license-server
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: MP_ACCESS_TOKEN
+        sync: false
+      - key: MP_WEBHOOK_SECRET
+        sync: false
+      - key: JWT_PRIVATE_KEY
+        sync: false
+      - key: JWT_PUBLIC_KEY
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SERVER_URL
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: shopee-licenses-db
+          property: connectionString
+
+databases:
+  - name: shopee-licenses-db
+    plan: free

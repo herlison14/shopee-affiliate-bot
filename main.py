@@ -36,6 +36,44 @@ def _setup_logging(log_path: str):
 _setup_logging("logs/affiliate_bot.log")
 logger = logging.getLogger(__name__)
 
+
+# ── Validação de licença ─────────────────────────────────────────────────────
+def _check_license():
+    """Valida licença antes de iniciar o bot. Exibe tela de ativação se necessário."""
+    try:
+        sys.path.insert(0, str(Path(__file__).parent / "bot_client"))
+        from license_validator import get_saved_license, validate_license
+
+        license_key = get_saved_license()
+
+        if license_key:
+            valid, msg = validate_license(license_key)
+            if valid:
+                logger.info(f"Licença OK: {msg}")
+                return
+            logger.warning(f"Licença inválida: {msg}")
+
+        # Exibe tela de ativação
+        from activation_ui import show_activation_window
+        key = show_activation_window()
+        if not key:
+            logger.error("Ativação cancelada pelo usuário.")
+            sys.exit(1)
+
+        valid, msg = validate_license(key)
+        if not valid:
+            logger.error(f"Ativação falhou: {msg}")
+            sys.exit(1)
+
+        logger.info(f"Bot ativado com sucesso: {msg}")
+
+    except ImportError:
+        # Em desenvolvimento local (sem bot_client), pula a validação
+        logger.warning("Módulo de licença não encontrado — modo desenvolvimento.")
+
+
+_check_license()
+
 # Excel concurrency lock — shared with scheduler
 excel_lock = threading.Lock()
 
@@ -144,35 +182,56 @@ async def run_pipeline(settings, dry_run: bool = False) -> list:
 
 
 def _mock_products(n: int) -> list:
-    """Generate mock products for dry-run testing."""
-    return [
-        {
-            "produto": f"Produto Teste {i+1}",
-            "product_id": f"1000{i}",
-            "link_original": f"https://shopee.com.br/produto-teste-{i+1}-i.12345.{i+1}",
-            "link_afiliado": f"https://s.shopee.com.br/test{i+1}",
-            "comissao_novo": 10.0 + i,
-            "comissao_atual": 5.0 + i,
-            "thumbnail_url": "",
-            "category": "Teste",
-        }
-        for i in range(n)
+    """Generate realistic mock products covering different categories for dry-run."""
+    _samples = [
+        ("Fone Bluetooth JBL TWS sem fio preto",           "eletronicos", 89.90,  14.0),
+        ("Serum Vitamina C facial anti-idade 30ml",        "beleza",      45.00,  18.0),
+        ("Vestido floral manga longa feminino P-GG",       "moda",        79.90,  12.0),
+        ("Airfryer Digital 4L 1400W inox",                 "casa",       189.90,  10.0),
+        ("Whey Protein Chocolate 1kg Growth",              "saude",       89.90,  11.0),
+        ("Coleira antipulga gato cachorro ajustavel",      "pet",         29.90,  20.0),
+        ("Kit berco bebe menino 9 pecas algodao",          "bebe",       149.90,   9.0),
+        ("Suporte articulado celular carro 360 graus",     "eletronicos", 24.90,  16.0),
     ]
+    produtos = []
+    for i in range(min(n, len(_samples))):
+        nome, cat, preco, comm = _samples[i]
+        produtos.append({
+            "produto":       nome,
+            "product_id":    f"1000{i}",
+            "link_original": f"https://shopee.com.br/{cat}-produto-i.{12345+i}.{i+1}",
+            "link_afiliado": f"https://s.shopee.com.br/dryrun{i+1}",
+            "comissao_novo": comm,
+            "comissao_atual": round(comm * 0.6, 1),
+            "preco":          preco,
+            "thumbnail_url":  "",
+            "category":       cat,
+        })
+    return produtos
 
 
 def _mock_copy(products: list) -> list:
-    """Add mock copy fields for dry-run testing."""
+    """
+    Dry-run: chama o gerador de copy real (com categorias) mas sem API Claude.
+    Usa os fallbacks por categoria para mostrar copy realista no dashboard.
+    """
+    from ai.copy_generator import detect_category, FALLBACK_COPIES, CATEGORY_LABELS
+
     for p in products:
+        cat  = detect_category(p.get("produto", ""), p.get("link_original", ""))
+        link = p.get("link_afiliado", "")
+        fb   = FALLBACK_COPIES.get(cat, FALLBACK_COPIES["geral"])
+        nome = p.get("produto", "produto")
+        preco = p.get("preco", 0)
+        preco_txt = f"R$ {preco:.2f}" if preco > 0 else "preco imperdivel"
+
         p.update({
-            "overlay": "Preço ABSURDO hoje! 🔥",
-            "legenda": (
-                f"Olha esse {p['produto']} que encontrei! 😍\n"
-                f"🛒 Link: {p['link_afiliado']}\n\n"
-                "🤖 Conteúdo com apoio de IA | #publi"
-            ),
-            "hashtags": "#shopee #achadinhos #shopeebr",
-            "estrategia_curta": "Mock: gatilho de escassez + preço atraente.",
-            "ai_status": "dry_run",
+            "overlay":             fb["overlay"],
+            "legenda":             fb["legenda"].format(link=link),
+            "hashtags":            fb["hashtags"],
+            "estrategia":          f"[DRY-RUN] {fb['estrategia']}",
+            "ai_status":           "dry_run",
+            "categoria_detectada": cat,
         })
     return products
 

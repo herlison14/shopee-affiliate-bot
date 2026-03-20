@@ -978,30 +978,12 @@
     <h3>Pague via PIX</h3>
     <p>Informe seu email para receber a licença automaticamente após o pagamento.</p>
 
-    <!-- Passo 1: Email -->
-    <div id="pix-step-email">
-      <input type="email" id="pix-email-input" placeholder="seu@email.com" style="width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid #333;background:#1a1a1a;color:#fff;font-size:15px;margin-bottom:12px;box-sizing:border-box;" />
-      <button class="btn-copy" id="btn-gerar-qr" onclick="gerarQrPix()">
-        <span id="gerar-label">Gerar QR Code PIX — R$79,90</span>
-      </button>
-      <p id="pix-email-erro" style="color:#ff6b6b;font-size:13px;margin-top:8px;display:none;">Informe um email válido.</p>
-    </div>
-
-    <!-- Passo 2: QR Code real -->
-    <div id="pix-step-qr" style="display:none;">
-      <div class="qr-box">
-        <img id="pix-qr-img" src="" alt="QR Code PIX" style="width:100%;height:100%;object-fit:contain;" />
-      </div>
-      <div class="pix-key-box">
-        <div class="pix-key-label">PIX Copia e Cola</div>
-        <div class="pix-key-val" id="pix-key-text" style="font-size:11px;word-break:break-all;"></div>
-      </div>
-      <button class="btn-copy" onclick="copyPix()">
-        <span id="copy-label">Copiar PIX Copia e Cola</span>
-      </button>
-    </div>
-
-    <p class="modal-after">Após o pagamento, você receberá a chave de licença em <strong>até 5 minutos</strong> no email informado.</p>
+    <input type="email" id="pix-email-input" placeholder="seu@email.com" style="width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid #333;background:#1a1a1a;color:#fff;font-size:15px;margin-bottom:12px;box-sizing:border-box;" />
+    <button class="btn-copy" id="btn-pagar" onclick="gerarQrPix()">
+      <span id="gerar-label">Pagar R$79,90 via PIX</span>
+    </button>
+    <p id="pix-email-erro" style="color:#ff6b6b;font-size:13px;margin-top:8px;display:none;">Informe um email válido.</p>
+    <p class="modal-after">Você será redirecionado para o checkout seguro do Mercado Pago. Após o pagamento, a licença é enviada automaticamente para seu email em <strong>até 5 minutos</strong>.</p>
   </div>
 </div>
 
@@ -1040,10 +1022,10 @@
       return;
     }
     erro.style.display = 'none';
-    const btn = document.getElementById('btn-gerar-qr');
+    const btn = document.getElementById('btn-pagar');
     const label = document.getElementById('gerar-label');
     btn.disabled = true;
-    label.textContent = 'Gerando QR Code...';
+    label.textContent = 'Aguarde...';
 
     try {
       const resp = await fetch(`${SERVER_URL}/payment/create`, {
@@ -1053,13 +1035,10 @@
       });
       if (!resp.ok) throw new Error('Erro no servidor');
       const data = await resp.json();
-
-      document.getElementById('pix-qr-img').src = `data:image/png;base64,${data.qr_code_base64}`;
-      document.getElementById('pix-key-text').textContent = data.qr_code;
-      document.getElementById('pix-step-email').style.display = 'none';
-      document.getElementById('pix-step-qr').style.display = 'block';
+      window.open(data.init_point, '_blank');
+      resetModal();
     } catch (e) {
-      label.textContent = 'Erro ao gerar QR. Tente novamente.';
+      label.textContent = 'Erro. Tente novamente.';
       btn.disabled = false;
     }
   }
@@ -1072,20 +1051,10 @@
 
   function resetModal() {
     document.getElementById('modal-pix').classList.remove('open');
-    document.getElementById('pix-step-email').style.display = 'block';
-    document.getElementById('pix-step-qr').style.display = 'none';
     document.getElementById('pix-email-input').value = '';
-    document.getElementById('gerar-label').textContent = 'Gerar QR Code PIX — R$79,90';
-    document.getElementById('btn-gerar-qr').disabled = false;
-  }
-
-  function copyPix() {
-    const key = document.getElementById('pix-key-text').textContent;
-    navigator.clipboard.writeText(key).then(() => {
-      const label = document.getElementById('copy-label');
-      label.textContent = '✓ Copiado!';
-      setTimeout(() => label.textContent = 'Copiar PIX Copia e Cola', 2000);
-    });
+    document.getElementById('gerar-label').textContent = 'Pagar R$79,90 via PIX';
+    document.getElementById('btn-pagar').disabled = false;
+    document.getElementById('pix-email-erro').style.display = 'none';
   }
 
   // ── Animated counter ──────────────────────────────────────────────────────

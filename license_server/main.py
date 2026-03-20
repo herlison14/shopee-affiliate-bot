@@ -288,45 +288,51 @@ class CreatePaymentRequest(BaseModel):
 
 
 class CreatePaymentResponse(BaseModel):
-    payment_id: str
-    qr_code: str          # string PIX (copia e cola)
-    qr_code_base64: str   # imagem PNG em base64
+    preference_id: str
+    init_point: str   # URL do Checkout Pro MP (produção)
 
 
 @app.post("/payment/create", response_model=CreatePaymentResponse)
 async def create_payment(req: CreatePaymentRequest):
     """
-    Cria um pagamento PIX no Mercado Pago e retorna QR Code real.
-    Chamado pelo frontend da landing page quando cliente clica em Pagar.
+    Cria uma preferência de pagamento no Mercado Pago Checkout Pro.
+    Retorna o link de checkout onde o cliente paga via PIX.
     """
-    url = "https://api.mercadopago.com/v1/payments"
-    idempotency_key = f"{req.email}-{datetime.utcnow().strftime('%Y%m%d%H%M')}"
+    url = "https://api.mercadopago.com/checkout/preferences"
     headers = {
         "Authorization": f"Bearer {settings.MP_ACCESS_TOKEN}",
         "Content-Type": "application/json",
-        "X-Idempotency-Key": idempotency_key,
     }
     payload = {
-        "transaction_amount": settings.PRODUCT_PRICE,
-        "description": settings.PRODUCT_NAME,
-        "payment_method_id": "pix",
+        "items": [{
+            "title": settings.PRODUCT_NAME,
+            "quantity": 1,
+            "unit_price": settings.PRODUCT_PRICE,
+            "currency_id": "BRL",
+        }],
         "payer": {"email": req.email},
+        "payment_methods": {
+            "excluded_payment_types": [
+                {"id": "credit_card"},
+                {"id": "debit_card"},
+                {"id": "ticket"},
+            ]
+        },
+        "notification_url": f"{settings.SERVER_URL}/webhook/mercadopago",
+        "external_reference": req.email,
     }
     async with httpx.AsyncClient() as client:
         try:
             resp = await client.post(url, json=payload, headers=headers, timeout=15)
             resp.raise_for_status()
         except Exception as e:
-            logger.error(f"Erro ao criar pagamento MP: {e}")
+            logger.error(f"Erro ao criar preferência MP: {e}")
             raise HTTPException(502, "Erro ao criar pagamento no Mercado Pago")
 
     data = resp.json()
-    txn = data.get("point_of_interaction", {}).get("transaction_data", {})
-
     return CreatePaymentResponse(
-        payment_id=str(data["id"]),
-        qr_code=txn.get("qr_code", ""),
-        qr_code_base64=txn.get("qr_code_base64", ""),
+        preference_id=data["id"],
+        init_point=data["init_point"],
     )
 
 

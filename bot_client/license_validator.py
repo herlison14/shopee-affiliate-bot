@@ -21,7 +21,7 @@ import requests
 logger = logging.getLogger(__name__)
 
 # ── Configurações (substituir antes de empacotar) ─────────────────────────────
-SERVER_URL = "https://seu-dominio.com"   # trocar para URL do servidor em produção
+SERVER_URL = "https://shopee-license-server-production.up.railway.app"
 LICENSE_FILE = Path(os.environ.get("APPDATA", ".")) / ".shopee_bot_license"
 
 # Chave pública RSA — gerada em license_server/keys/public.pem

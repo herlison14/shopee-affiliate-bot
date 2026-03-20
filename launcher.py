@@ -108,10 +108,10 @@ class ControlPanel:
         btn_frame.pack(pady=5)
 
         self._btn_pipeline = self._make_btn(
-            btn_frame, "▶  Executar Pipeline", "#ee4d2d", self._run_pipeline, 0, 0
+            btn_frame, "▶  Executar Agora", "#ee4d2d", self._run_pipeline, 0, 0
         )
         self._btn_scheduler = self._make_btn(
-            btn_frame, "🕐  Iniciar Agendador", "#2196F3", self._start_scheduler, 0, 1
+            btn_frame, "♾  Modo Loop (6h)", "#2196F3", self._start_scheduler, 0, 1
         )
         self._btn_dashboard = self._make_btn(
             btn_frame, "📊  Abrir Dashboard", "#4CAF50", self._open_dashboard, 1, 0
@@ -159,22 +159,22 @@ class ControlPanel:
 
     def _run_pipeline(self):
         if self._bot_proc and self._bot_proc.poll() is None:
-            messagebox.showinfo("Info", "Pipeline já está em execução.")
+            messagebox.showinfo("Info", "Pipeline ja esta em execucao.")
             return
-        self._status_var.set("🟢  Pipeline executando...")
+        self._status_var.set("Executando pipeline...")
         self._bot_proc = subprocess.Popen(
-            [PYTHON, str(BASE_DIR / "main.py")],
+            [PYTHON, str(BASE_DIR / "robot_master.py")],
             cwd=str(BASE_DIR),
         )
         threading.Thread(target=self._wait_proc, args=(self._bot_proc, "Pipeline"), daemon=True).start()
 
     def _start_scheduler(self):
         if self._scheduler_proc and self._scheduler_proc.poll() is None:
-            messagebox.showinfo("Info", "Agendador já está ativo.")
+            messagebox.showinfo("Info", "Modo loop ja esta ativo.")
             return
-        self._status_var.set("🟡  Agendador ativo...")
+        self._status_var.set("Modo loop ativo (repete a cada 6h)...")
         self._scheduler_proc = subprocess.Popen(
-            [PYTHON, str(BASE_DIR / "main.py"), "--scheduler"],
+            [PYTHON, str(BASE_DIR / "robot_master.py"), "--loop"],
             cwd=str(BASE_DIR),
         )
 

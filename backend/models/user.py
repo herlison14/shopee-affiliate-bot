@@ -1,10 +1,10 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime
 
 from sqlalchemy import String, Boolean, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from database import Base
+from database import Base, utcnow
 
 
 class User(Base):
@@ -20,6 +20,6 @@ class User(Base):
     shopee_shop_id: Mapped[str] = mapped_column(String(64), nullable=True)
 
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
     campaigns = relationship("Campaign", back_populates="owner", cascade="all, delete-orphan")

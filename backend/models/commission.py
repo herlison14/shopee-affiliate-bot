@@ -1,10 +1,10 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime
 
 from sqlalchemy import String, Numeric, DateTime, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from database import Base
+from database import Base, utcnow
 
 
 class Commission(Base):
@@ -19,6 +19,6 @@ class Commission(Base):
     platform_fee: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
 
     status: Mapped[str] = mapped_column(String(32), default="pending")  # pending|confirmed|paid|cancelled
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
     campaign = relationship("Campaign", back_populates="commissions")

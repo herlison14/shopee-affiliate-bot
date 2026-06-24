@@ -1,7 +1,14 @@
+from datetime import datetime, timezone
+
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.orm import DeclarativeBase
 
 from config import settings
+
+
+def utcnow() -> datetime:
+    """Naive UTC datetime, compatible with TIMESTAMP WITHOUT TIME ZONE columns."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 engine = create_async_engine(settings.ASYNC_DATABASE_URL, pool_pre_ping=True, future=True)
 

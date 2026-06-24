@@ -1,3 +1,5 @@
+from datetime import timezone
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -28,6 +30,10 @@ async def create_campaign(
 ):
     caption, hashtags = await generate_caption_and_hashtags(payload.product_name)
 
+    scheduled_for = payload.scheduled_for
+    if scheduled_for is not None and scheduled_for.tzinfo is not None:
+        scheduled_for = scheduled_for.astimezone(timezone.utc).replace(tzinfo=None)
+
     campaign = Campaign(
         user_id=current_user.id,
         product_name=payload.product_name,
@@ -35,8 +41,8 @@ async def create_campaign(
         affiliate_link=payload.affiliate_link,
         caption=caption,
         hashtags=hashtags,
-        status="scheduled" if payload.scheduled_for else "draft",
-        scheduled_for=payload.scheduled_for,
+        status="scheduled" if scheduled_for else "draft",
+        scheduled_for=scheduled_for,
     )
     db.add(campaign)
     await db.commit()

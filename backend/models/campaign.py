@@ -1,10 +1,10 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime
 
 from sqlalchemy import String, Text, DateTime, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from database import Base
+from database import Base, utcnow
 
 
 class Campaign(Base):
@@ -23,7 +23,7 @@ class Campaign(Base):
     status: Mapped[str] = mapped_column(String(32), default="draft")  # draft|scheduled|posted|failed
     scheduled_for: Mapped[datetime] = mapped_column(DateTime, nullable=True)
 
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
     owner = relationship("User", back_populates="campaigns")
     commissions = relationship("Commission", back_populates="campaign", cascade="all, delete-orphan")

@@ -19,6 +19,8 @@ class User(Base):
     shopee_refresh_token: Mapped[str] = mapped_column(String(512), nullable=True)
     shopee_shop_id: Mapped[str] = mapped_column(String(64), nullable=True)
 
+    mcp_token: Mapped[str] = mapped_column(String(64), unique=True, nullable=True, index=True)
+
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 

@@ -1,10 +1,31 @@
 import { useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { useCampaigns } from '../hooks/useCampaigns'
+import { useMcpUrl } from '../hooks/useMcpUrl'
 
 export default function DashboardPage() {
   const { user, logout } = useAuth()
   const { campaigns, loading, error, createCampaign, deleteCampaign } = useCampaigns()
+  const { mcpUrl, loading: mcpLoading, error: mcpError, regenerate } = useMcpUrl()
+  const [copied, setCopied] = useState(false)
+  const [regenerating, setRegenerating] = useState(false)
+
+  const handleCopy = async () => {
+    if (!mcpUrl) return
+    await navigator.clipboard.writeText(mcpUrl)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  const handleRegenerate = async () => {
+    if (!window.confirm('Isso invalida a URL atual e qualquer cliente conectado com ela. Continuar?')) return
+    setRegenerating(true)
+    try {
+      await regenerate()
+    } finally {
+      setRegenerating(false)
+    }
+  }
   const [productName, setProductName] = useState('')
   const [productUrl, setProductUrl] = useState('')
   const [affiliateLink, setAffiliateLink] = useState('')
@@ -79,6 +100,42 @@ export default function DashboardPage() {
             </button>
           </form>
           {formError && <p className="mt-2 text-sm text-red-500">{formError}</p>}
+        </section>
+
+        <section className="mb-8 rounded-xl bg-white p-6 shadow-sm">
+          <h2 className="mb-1 text-lg font-semibold">Conectar com IA</h2>
+          <p className="mb-4 text-sm text-gray-500">
+            Cole esta URL no Claude Desktop (Settings → Connectors) ou em outro cliente MCP para
+            pedir por conversa: criar campanhas, listar e consultar comissões.
+          </p>
+          {mcpLoading && <p className="text-sm text-gray-500">Carregando...</p>}
+          {mcpError && <p className="text-sm text-red-500">{mcpError}</p>}
+          {mcpUrl && (
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <input
+                type="text"
+                readOnly
+                value={mcpUrl}
+                onFocus={(e) => e.target.select()}
+                className="flex-1 rounded-lg border bg-gray-50 px-3 py-2 text-xs text-gray-700 sm:text-sm"
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={handleCopy}
+                  className="whitespace-nowrap rounded-lg bg-shopee px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+                >
+                  {copied ? 'Copiado!' : 'Copiar'}
+                </button>
+                <button
+                  onClick={handleRegenerate}
+                  disabled={regenerating}
+                  className="whitespace-nowrap rounded-lg border px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+                >
+                  {regenerating ? 'Gerando...' : 'Gerar nova URL'}
+                </button>
+              </div>
+            </div>
+          )}
         </section>
 
         <section className="rounded-xl bg-white p-6 shadow-sm">

@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+import secrets
+
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.responses import RedirectResponse
 from sqlalchemy import select
@@ -45,6 +47,35 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSessi
 @router.get("/me", response_model=UserOut)
 async def me(current_user: User = Depends(get_current_user)):
     return current_user
+
+
+@router.get("/mcp-url")
+async def get_mcp_url(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Retorna a URL pessoal do servidor MCP, gerando o token na primeira chamada."""
+    if not current_user.mcp_token:
+        current_user.mcp_token = secrets.token_urlsafe(32)
+        await db.commit()
+
+    base_url = str(request.base_url).rstrip("/")
+    return {"mcp_url": f"{base_url}/agent/{current_user.mcp_token}/mcp"}
+
+
+@router.post("/mcp-url/regenerate")
+async def regenerate_mcp_url(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Invalida a URL MCP atual e gera uma nova (revoga acesso de clientes antigos)."""
+    current_user.mcp_token = secrets.token_urlsafe(32)
+    await db.commit()
+
+    base_url = str(request.base_url).rstrip("/")
+    return {"mcp_url": f"{base_url}/agent/{current_user.mcp_token}/mcp"}
 
 
 @router.get("/shopee/connect")

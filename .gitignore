@@ -1,7 +1,23 @@
 .env
 data/.shopee_session.json
 data/output.xlsx
+data/videos/
 logs/
 __pycache__/
 *.pyc
 .DS_Store
+
+# backend
+backend/__pycache__/
+backend/**/__pycache__/
+backend/.env
+backend/venv/
+backend/*.db
+backend/test.db
+
+# frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+

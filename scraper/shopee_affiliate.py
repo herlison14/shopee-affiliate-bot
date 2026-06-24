@@ -272,9 +272,28 @@ async def discover_products(
     Navigate the affiliate product discovery section and collect raw product data.
     """
     products = []
+    seen_urls = set()
     logger.info(f"Descobrindo produtos (máx: {max_products}, comissão mín: {min_commission_pct}%)...")
 
-    target_url = f"{affiliate_url}/offer/product_offer"
+    # Seções de oferta para scraping — combinadas para atingir max_products
+    offer_sections = [
+        f"{affiliate_url}/offer/product_offer",
+        f"{affiliate_url}/offer/shopee_offer",
+        f"{affiliate_url}/offer/offer_for_me",
+    ]
+
+    for section_url in offer_sections:
+        if len(products) >= max_products:
+            break
+        logger.info(f"Seção: {section_url.split('/')[-1]} ({len(products)}/{max_products} produtos coletados)")
+        await _scrape_section(page, section_url, products, seen_urls, max_products, min_commission_pct, screenshots_dir)
+
+    logger.info(f"Total de produtos descobertos: {len(products)}")
+    return products
+
+
+async def _scrape_section(page, target_url, products, seen_urls, max_products, min_commission_pct, screenshots_dir):
+    """Extrai produtos de uma seção de oferta, com scroll infinito."""
 
     try:
         # Navega apenas se não estiver já na página correta
@@ -324,10 +343,11 @@ async def discover_products(
                     // Palavras que indicam elemento de UI, não produto real
                     const UI_BLACKLIST = /^(português|english|español|中文|tiếng việt|bahasa|idioma|language|filtro|filter|categoria|category|ordenar|sort|buscar|search|login|entrar|cadastrar|menu|home|início|voltar|back|próximo|anterior|next|prev|page|página|loading|carregando|erro|error)$/i;
 
-                    // URL de produto real Shopee tem padrão -i.NUMEROS.NUMEROS
+                    // URL de produto: formato antigo (shopee.com.br/...-i.ID) ou novo (affiliate.shopee.com.br/offer/product_offer/ID)
                     function isProductUrl(url) {
                         return /shopee\\.com\\.br\\/.*-i\\.\\d+\\.\\d+/.test(url) ||
-                               /shopee\\.com\\.br\\/[^\\/]+\\/[^\\/]+-i\\.\\d+/.test(url);
+                               /shopee\\.com\\.br\\/[^\\/]+\\/[^\\/]+-i\\.\\d+/.test(url) ||
+                               /affiliate\\.shopee\\.com\\.br\\/offer\\/product_offer\\/\\d+/.test(url);
                     }
 
                     // Helper: encontra o ancestral mais próximo que contém comissão E link de produto
@@ -338,7 +358,7 @@ async def discover_products(
                             if (!el) return null;
                             const txt = el.innerText || '';
                             const hasComm = /\\d+[,.]?\\d*\\s*%/.test(txt);
-                            const productLink = Array.from(el.querySelectorAll('a[href*="shopee.com.br"]'))
+                            const productLink = Array.from(el.querySelectorAll('a'))
                                 .find(a => isProductUrl(a.href));
                             if (hasComm && productLink && txt.length > 40) return el;
                         }
@@ -372,7 +392,7 @@ async def discover_products(
                             if (!card) return;
 
                             const fullText = card.innerText || '';
-                            const productLinks = Array.from(card.querySelectorAll('a[href*="shopee.com.br"]'))
+                            const productLinks = Array.from(card.querySelectorAll('a'))
                                 .filter(a => isProductUrl(a.href));
                             const href = productLinks.length > 0 ? productLinks[0].href : '';
                             if (!href || seen.has(href)) return;
@@ -402,7 +422,7 @@ async def discover_products(
                                 if (!card) return;
 
                                 const fullText = card.innerText || '';
-                                const productLinks = Array.from(card.querySelectorAll('a[href*="shopee.com.br"]'))
+                                const productLinks = Array.from(card.querySelectorAll('a'))
                                     .filter(a => isProductUrl(a.href));
                                 const href = productLinks.length > 0 ? productLinks[0].href : '';
                                 if (!href || seen.has(href)) return;
@@ -467,10 +487,14 @@ async def discover_products(
                 commission = p.get('commission', 0)
                 if commission < min_commission_pct:
                     continue
+                url = p.get('url', '')
+                if url in seen_urls:
+                    continue
+                seen_urls.add(url)
                 products.append({
                     "produto": p.get('name', 'Produto'),
-                    "product_id": _extract_product_id(p.get('url', '')),
-                    "link_original": p.get('url', ''),
+                    "product_id": _extract_product_id(url),
+                    "link_original": url,
                     "comissao_novo": commission,
                     "comissao_atual": commission * 0.5,
                     "preco": p.get('price', 0),
@@ -481,26 +505,37 @@ async def discover_products(
             if len(products) >= max_products:
                 break
 
-            # Paginação
+            # Paginação — tenta botão primeiro, senão usa scroll infinito
             next_btn = await page.query_selector(SELECTORS["pagination_next"])
-            if not next_btn:
-                logger.info("Sem próxima página, fim da paginação.")
-                break
-            is_disabled = await next_btn.get_attribute("disabled")
-            if is_disabled:
-                logger.info("Botão próxima página desabilitado, fim.")
-                break
-
-            await next_btn.click()
-            await _delay(3, 5)
-            page_num += 1
+            if next_btn:
+                is_disabled = await next_btn.get_attribute("disabled")
+                if is_disabled:
+                    logger.info("Botão próxima página desabilitado, fim.")
+                    break
+                await next_btn.click()
+                await _delay(3, 5)
+                page_num += 1
+            else:
+                # Scroll infinito — rola até o fim e aguarda novos produtos carregarem
+                btn_before = await page.evaluate("""
+                    () => Array.from(document.querySelectorAll('button'))
+                        .filter(b => /obter\\s*link/i.test(b.textContent)).length
+                """)
+                await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+                await _delay(3, 5)
+                btn_after = await page.evaluate("""
+                    () => Array.from(document.querySelectorAll('button'))
+                        .filter(b => /obter\\s*link/i.test(b.textContent)).length
+                """)
+                if btn_after <= btn_before:
+                    logger.info("Scroll infinito: sem novos produtos, fim da listagem.")
+                    break
+                logger.info(f"Scroll infinito: {btn_before} → {btn_after} botões, continuando...")
+                page_num += 1
 
     except Exception as e:
-        logger.error(f"Erro ao descobrir produtos: {e}")
+        logger.error(f"Erro ao descobrir produtos na seção: {e}")
         await _screenshot(page, "discover_error", screenshots_dir)
-
-    logger.info(f"Total de produtos descobertos: {len(products)}")
-    return products
 
 
 async def _extract_product_from_element(element, min_commission_pct: float) -> dict | None:
@@ -551,6 +586,11 @@ def _parse_commission(text: str) -> float:
 def _extract_product_id(url: str) -> str:
     """Extract the product ID from a Shopee product URL."""
     import re
+    # Novo formato: affiliate.shopee.com.br/offer/product_offer/ID
+    match = re.search(r"/offer/product_offer/(\d+)", url)
+    if match:
+        return match.group(1)
+    # Formato clássico: -i.SHOPID.ITEMID
     match = re.search(r"i\.(\d+)\.(\d+)", url)
     if match:
         return f"{match.group(1)}.{match.group(2)}"
@@ -723,25 +763,28 @@ async def scrape_all_products(settings) -> list:
         enriched = []
         for i, product in enumerate(raw_products):
             logger.info(f"[{i+1}/{len(raw_products)}] Gerando link: {product['produto'][:50]}")
+            try:
+                subids = build_subids(
+                    product_name=product["produto"],
+                    social_network=settings.social_network,
+                    campaign=settings.campaign_name,
+                )
 
-            subids = build_subids(
-                product_name=product["produto"],
-                social_network=settings.social_network,
-                campaign=settings.campaign_name,
-            )
+                affiliate_link = await get_affiliate_link(
+                    page=page,
+                    product=product,
+                    subids=subids,
+                    affiliate_url=settings.shopee_affiliate_url,
+                    screenshots_dir=settings.SCREENSHOTS_DIR,
+                )
 
-            affiliate_link = await get_affiliate_link(
-                page=page,
-                product=product,
-                subids=subids,
-                affiliate_url=settings.shopee_affiliate_url,
-                screenshots_dir=settings.SCREENSHOTS_DIR,
-            )
-
-            product["link_afiliado"] = affiliate_link or product["link_original"]
-            product["subids"] = subids
-            enriched.append(product)
-            await _delay(1, 2)
+                product["link_afiliado"] = affiliate_link or product["link_original"]
+                product["subids"] = subids
+                enriched.append(product)
+            except Exception as e:
+                logger.warning(f"[{i+1}] Produto ignorado por erro: {product.get('produto', '?')[:50]} — {e}")
+            finally:
+                await _delay(1, 2)
 
         # ── Auto-follow dos vendedores (se habilitado) ────────────────────────
         auto_follow = getattr(settings, "auto_follow_sellers", True)

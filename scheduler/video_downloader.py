@@ -119,9 +119,8 @@ def download_ytdlp(url: str, output_path: Path) -> bool:
         cmd = [
             sys.executable, "-m", "yt_dlp",
             "--no-playlist",
-            "--format", "bestvideo[ext=mp4][filesize<50M]+bestaudio[ext=m4a]/best[ext=mp4][filesize<50M]/best",
+            "--format", "best[ext=mp4][filesize<50M]/best[filesize<50M]",
             "--output", output_template,
-            "--merge-output-format", "mp4",
             "--no-warnings",
             "--quiet",
             url,
@@ -241,6 +240,97 @@ def download_videos_batch(products_with_urls: list[dict]) -> dict:
 
     downloaded = sum(1 for v in results.values() if v)
     logger.info(f"Download concluído: {downloaded}/{total} vídeos baixados")
+    return results
+
+
+# ── Busca automática no YouTube Shorts ────────────────────────────────────────
+
+def search_and_download_video(product: dict) -> str | None:
+    """
+    Busca um vídeo no YouTube Shorts pelo nome do produto e baixa automaticamente.
+
+    Args:
+        product: dict com 'produto'
+
+    Returns:
+        Caminho do arquivo baixado, ou None se falhou.
+    """
+    name = product.get("produto", "")
+    if not name:
+        return None
+
+    # Verifica se já existe vídeo para este produto
+    existing = _already_downloaded(name)
+    if existing:
+        logger.info(f"Vídeo já existe: {existing.name}")
+        return str(existing)
+
+    if not _check_ytdlp():
+        _install_ytdlp()
+
+    safe_name = _sanitize_filename(name)
+    vdir = _videos_dir()
+    output_path = vdir / f"{safe_name}.mp4"
+
+    # Usa as primeiras 4 palavras do nome para a busca (mais genérico = mais resultados)
+    short_name = " ".join(name.split()[:4])
+    query = f"{short_name} shopee"
+    output_template = str(output_path.with_suffix("")) + ".%(ext)s"
+
+    cmd = [
+        sys.executable, "-m", "yt_dlp",
+        "--no-playlist",
+        "--format", "18/best[ext=mp4][filesize<50M]/best[filesize<50M]",
+        "--output", output_template,
+        "--quiet",
+        f"ytsearch1:{query}",
+    ]
+
+    try:
+        logger.info(f"Buscando vídeo para: '{name[:60]}'")
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+
+        # Procura arquivo baixado em qualquer extensão suportada
+        found = None
+        for ext in [".mp4", ".webm", ".mkv", ".mov", ".avi"]:
+            candidate = output_path.with_suffix(ext)
+            if candidate.exists() and candidate.stat().st_size > 10_000:
+                found = candidate
+                break
+
+        if found:
+            if found != output_path:
+                found.rename(output_path)
+            logger.info(f"Vídeo baixado: {output_path.name} ({output_path.stat().st_size/1024/1024:.1f}MB)")
+            return str(output_path)
+
+        logger.warning(f"Nenhum vídeo encontrado para: '{name[:60]}'")
+        return None
+    except subprocess.TimeoutExpired:
+        logger.error(f"Timeout ao buscar vídeo para: '{name[:60]}'")
+        return None
+    except Exception as e:
+        logger.error(f"Erro ao buscar vídeo: {e}")
+        return None
+
+
+def search_videos_batch(products: list) -> dict:
+    """
+    Busca e baixa vídeos para uma lista de produtos.
+
+    Returns:
+        dict: {produto_nome: caminho_video_ou_None}
+    """
+    results = {}
+    total = len(products)
+    for i, product in enumerate(products):
+        name = product.get("produto", f"produto_{i}")
+        logger.info(f"[{i+1}/{total}] Buscando vídeo: {name[:50]}")
+        path = search_and_download_video(product)
+        results[name] = path
+
+    downloaded = sum(1 for v in results.values() if v)
+    logger.info(f"Vídeos baixados: {downloaded}/{total}")
     return results
 
 

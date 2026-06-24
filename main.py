@@ -126,7 +126,7 @@ async def run_pipeline(settings, dry_run: bool = False) -> list:
             logger.error("Nenhum produto coletado. Verifique login e seletores.")
             return []
 
-    logger.info(f"Etapa 2/3 — Gerando copy com Claude ({len(products)} produtos)...")
+    logger.info(f"Etapa 2/4 — Gerando copy com Claude ({len(products)} produtos)...")
     if dry_run:
         products = _mock_copy(products)
     else:
@@ -136,8 +136,29 @@ async def run_pipeline(settings, dry_run: bool = False) -> list:
             model=settings.anthropic_model,
         )
 
-    logger.info("Etapa 3/3 — Salvando Excel...")
+    logger.info("Etapa 3/4 — Salvando Excel...")
     save_to_excel(products, settings.EXCEL_PATH)
+
+    logger.info(f"Etapa 4/4 — Baixando vídeos para {len(products)} produtos...")
+    if not dry_run:
+        from scheduler.video_downloader import search_videos_batch
+        video_results = search_videos_batch(products)
+        downloaded = sum(1 for v in video_results.values() if v)
+        logger.info(f"Vídeos baixados: {downloaded}/{len(products)}")
+        # Atualiza video_path no Excel
+        if downloaded > 0:
+            import pandas as pd
+            df = pd.read_excel(settings.EXCEL_PATH)
+            if "video_path" not in df.columns:
+                df["video_path"] = ""
+            for product in products:
+                path = video_results.get(product.get("produto", ""))
+                if path:
+                    mask = df["produto"] == product["produto"]
+                    df.loc[mask, "video_path"] = path
+            with excel_lock:
+                df.to_excel(settings.EXCEL_PATH, index=False)
+            logger.info("Excel atualizado com caminhos dos vídeos.")
 
     logger.info("Pipeline concluído!")
     return products

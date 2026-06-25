@@ -84,6 +84,23 @@ export default function DashboardPage() {
       </header>
 
       <main className="mx-auto max-w-4xl px-6 py-8">
+        {!loading && campaigns.length === 0 && (
+          <section className="mb-8 rounded-xl border border-orange-100 bg-orange-50 p-6">
+            <h2 className="mb-2 text-lg font-semibold text-gray-900">
+              Bem-vindo(a)! Vamos criar sua primeira campanha
+            </h2>
+            <ol className="space-y-1 text-sm text-gray-700">
+              <li>1. Cole o nome e o link de um produto Shopee no formulário abaixo.</li>
+              <li>2. A IA gera legenda e hashtags na hora — revise e poste onde quiser.</li>
+              <li>
+                3. Conecte sua URL de IA (mais abaixo) se quiser criar campanhas conversando com o
+                Claude, em vez de usar este painel.
+              </li>
+              <li>4. James, o agente autônomo, já começa a acompanhar suas campanhas sozinho.</li>
+            </ol>
+          </section>
+        )}
+
         <section className="mb-8 rounded-xl bg-white p-6 shadow-sm">
           <h2 className="mb-4 text-lg font-semibold">Nova campanha</h2>
           <form onSubmit={handleCreate} className="grid gap-3 sm:grid-cols-3">

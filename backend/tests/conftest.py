@@ -12,6 +12,7 @@ import database
 from database import Base
 import app as app_module
 import mcp_server as mcp_module
+from rate_limit import auth_rate_limiter
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///./test.db"
 
@@ -33,6 +34,8 @@ async def setup_db():
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
+    auth_rate_limiter._hits.clear()
 
     yield
 

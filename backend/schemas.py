@@ -55,3 +55,14 @@ class CommissionWebhook(BaseModel):
     campaign_id: str
     order_id: str
     sale_amount: float
+
+
+class AgentActionOut(BaseModel):
+    id: str
+    campaign_id: str | None
+    action_type: str
+    description: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

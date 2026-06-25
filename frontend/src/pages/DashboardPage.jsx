@@ -2,11 +2,13 @@ import { useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { useCampaigns } from '../hooks/useCampaigns'
 import { useMcpUrl } from '../hooks/useMcpUrl'
+import { useAgentActions } from '../hooks/useAgentActions'
 
 export default function DashboardPage() {
   const { user, logout } = useAuth()
   const { campaigns, loading, error, createCampaign, deleteCampaign } = useCampaigns()
   const { mcpUrl, loading: mcpLoading, error: mcpError, regenerate } = useMcpUrl()
+  const { actions: agentActions, loading: agentLoading, error: agentError } = useAgentActions()
   const [copied, setCopied] = useState(false)
   const [regenerating, setRegenerating] = useState(false)
 
@@ -136,6 +138,34 @@ export default function DashboardPage() {
               </div>
             </div>
           )}
+        </section>
+
+        <section className="mb-8 rounded-xl bg-white p-6 shadow-sm">
+          <h2 className="mb-1 text-lg font-semibold">James, seu agente autônomo</h2>
+          <p className="mb-4 text-sm text-gray-500">
+            James roda em background e age sozinho: promove rascunhos esquecidos e renova
+            legendas de campanhas que não venderam, sem você precisar pedir.
+          </p>
+          {agentLoading && <p className="text-sm text-gray-500">Carregando...</p>}
+          {agentError && <p className="text-sm text-red-500">{agentError}</p>}
+          {!agentLoading && agentActions.length === 0 && (
+            <p className="text-sm text-gray-500">
+              James ainda não tomou nenhuma ação — ele revisa suas campanhas periodicamente.
+            </p>
+          )}
+          <ul className="space-y-2">
+            {agentActions.map((a) => (
+              <li key={a.id} className="rounded-lg border p-3 text-sm">
+                <span className="mr-2 inline-block rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+                  {a.action_type}
+                </span>
+                <span className="text-gray-700">{a.description}</span>
+                <p className="mt-1 text-xs text-gray-400">
+                  {new Date(a.created_at).toLocaleString('pt-BR')}
+                </p>
+              </li>
+            ))}
+          </ul>
         </section>
 
         <section className="rounded-xl bg-white p-6 shadow-sm">

@@ -3,6 +3,7 @@ from mcp.server.transport_security import TransportSecuritySettings
 from sqlalchemy import select
 
 import database
+from models.agent_action import AgentAction
 from models.campaign import Campaign
 from models.commission import Commission
 from models.user import User
@@ -13,7 +14,9 @@ mcp = FastMCP(
     instructions=(
         "Ferramentas para gerenciar campanhas de afiliado Shopee e consultar comissoes. "
         "Cada usuario tem sua propria URL com token; as ferramentas atuam apenas sobre os "
-        "dados do usuario dono do token presente na URL."
+        "dados do usuario dono do token presente na URL. O agente autonomo James roda em "
+        "background e tambem toma acoes (promove rascunhos, renova legendas sem vendas); "
+        "use 'historico_agente' para ver o que ele ja fez."
     ),
     stateless_http=True,
     streamable_http_path="/mcp",
@@ -141,3 +144,28 @@ async def resumo_comissoes(ctx: Context) -> dict:
                 for c in commissions
             ],
         }
+
+
+@mcp.tool()
+async def historico_agente(ctx: Context) -> list[dict]:
+    """Lista as acoes mais recentes que o agente autonomo James tomou sozinho
+    (sem o usuario pedir), como promover rascunhos ou renovar legendas sem vendas."""
+    user = await _get_user(ctx)
+    async with database.AsyncSessionLocal() as db:
+        result = await db.execute(
+            select(AgentAction)
+            .where(AgentAction.user_id == user.id)
+            .order_by(AgentAction.created_at.desc())
+            .limit(50)
+        )
+        actions = result.scalars().all()
+        return [
+            {
+                "id": a.id,
+                "campanha_id": a.campaign_id,
+                "tipo": a.action_type,
+                "descricao": a.description,
+                "quando": a.created_at.isoformat(),
+            }
+            for a in actions
+        ]

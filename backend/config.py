@@ -32,6 +32,10 @@ class Settings(BaseSettings):
     # Business
     COMMISSION_RATE: float = 0.10
 
+    # Agente autonomo (James)
+    AGENT_CYCLE_HOURS: float = 6
+    AGENT_ENABLED: bool = True
+
     @property
     def ASYNC_DATABASE_URL(self) -> str:
         url = self.DATABASE_URL

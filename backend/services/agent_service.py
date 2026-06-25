@@ -1,0 +1,85 @@
+from datetime import timedelta
+
+from sqlalchemy import select
+
+import database
+from models.agent_action import AgentAction
+from models.campaign import Campaign
+from models.commission import Commission
+from services.ai_service import generate_caption_and_hashtags
+
+DRAFT_PROMOTE_AFTER_HOURS = 24
+UNDERPERFORMING_AFTER_DAYS = 7
+
+AGENT_NAME = "James"
+
+
+async def _log_action(db, user_id: str, campaign_id: str | None, action_type: str, description: str) -> None:
+    db.add(AgentAction(user_id=user_id, campaign_id=campaign_id, action_type=action_type, description=description))
+
+
+async def _promote_stale_drafts(db) -> int:
+    cutoff = database.utcnow() - timedelta(hours=DRAFT_PROMOTE_AFTER_HOURS)
+    result = await db.execute(select(Campaign).where(Campaign.status == "draft", Campaign.created_at <= cutoff))
+    promoted = 0
+    for campaign in result.scalars().all():
+        campaign.status = "scheduled"
+        await _log_action(
+            db,
+            campaign.user_id,
+            campaign.id,
+            "promover_draft",
+            f"Campanha '{campaign.product_name}' estava em rascunho ha mais de "
+            f"{DRAFT_PROMOTE_AFTER_HOURS}h e foi promovida automaticamente para 'scheduled'.",
+        )
+        promoted += 1
+    return promoted
+
+
+async def _refresh_underperforming_campaigns(db) -> int:
+    cutoff = database.utcnow() - timedelta(days=UNDERPERFORMING_AFTER_DAYS)
+    result = await db.execute(
+        select(Campaign).where(Campaign.status.in_(["scheduled", "posted"]), Campaign.created_at <= cutoff)
+    )
+    refreshed = 0
+    for campaign in result.scalars().all():
+        has_sale = (
+            await db.execute(select(Commission.id).where(Commission.campaign_id == campaign.id))
+        ).scalar_one_or_none()
+        if has_sale is not None:
+            continue
+
+        already_refreshed = (
+            await db.execute(
+                select(AgentAction.id).where(
+                    AgentAction.campaign_id == campaign.id,
+                    AgentAction.action_type == "regenerar_legenda",
+                )
+            )
+        ).scalar_one_or_none()
+        if already_refreshed is not None:
+            continue
+
+        caption, hashtags = await generate_caption_and_hashtags(campaign.product_name)
+        campaign.caption = caption
+        campaign.hashtags = hashtags
+        await _log_action(
+            db,
+            campaign.user_id,
+            campaign.id,
+            "regenerar_legenda",
+            f"Campanha '{campaign.product_name}' nao teve vendas em {UNDERPERFORMING_AFTER_DAYS} dias; "
+            "legenda e hashtags foram regeneradas para tentar melhorar a performance.",
+        )
+        refreshed += 1
+    return refreshed
+
+
+async def run_agent_cycle() -> dict:
+    """Ciclo autonomo do agente James: roda periodicamente, sem intervencao humana."""
+    async with database.AsyncSessionLocal() as db:
+        promoted = await _promote_stale_drafts(db)
+        refreshed = await _refresh_underperforming_campaigns(db)
+        await db.commit()
+
+    return {"campanhas_promovidas": promoted, "campanhas_com_legenda_renovada": refreshed}

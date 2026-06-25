@@ -15,8 +15,9 @@ mcp = FastMCP(
         "Ferramentas para gerenciar campanhas de afiliado Shopee e consultar comissoes. "
         "Cada usuario tem sua propria URL com token; as ferramentas atuam apenas sobre os "
         "dados do usuario dono do token presente na URL. O agente autonomo James roda em "
-        "background e tambem toma acoes (promove rascunhos, renova legendas sem vendas); "
-        "use 'historico_agente' para ver o que ele ja fez."
+        "background e tambem toma acoes (promove rascunhos, renova legendas sem vendas, "
+        "sugere replicar campanhas que venderam); use 'historico_agente' para ver o que "
+        "ele ja fez e 'definir_agente_ativo' para liga-lo ou desliga-lo."
     ),
     stateless_http=True,
     streamable_http_path="/mcp",
@@ -169,3 +170,15 @@ async def historico_agente(ctx: Context) -> list[dict]:
             }
             for a in actions
         ]
+
+
+@mcp.tool()
+async def definir_agente_ativo(ctx: Context, ativo: bool) -> dict:
+    """Liga ou desliga o agente autonomo James para o usuario. Quando desligado,
+    James para de promover rascunhos, renovar legendas e sugerir replicacoes."""
+    user = await _get_user(ctx)
+    async with database.AsyncSessionLocal() as db:
+        db_user = await db.get(User, user.id)
+        db_user.agent_enabled = ativo
+        await db.commit()
+        return {"agente_ativo": db_user.agent_enabled}

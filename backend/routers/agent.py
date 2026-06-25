@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from database import get_db
 from models.agent_action import AgentAction
 from models.user import User
-from schemas import AgentActionOut
+from schemas import AgentActionOut, AgentSettingsOut, AgentSettingsUpdate
 from security import get_current_user
 
 router = APIRouter(prefix="/api/v1/agent", tags=["agent"])
@@ -25,3 +25,20 @@ async def list_agent_actions(
         .limit(limit)
     )
     return result.scalars().all()
+
+
+@router.get("/settings", response_model=AgentSettingsOut)
+async def get_agent_settings(current_user: User = Depends(get_current_user)):
+    return AgentSettingsOut(agent_enabled=current_user.agent_enabled)
+
+
+@router.put("/settings", response_model=AgentSettingsOut)
+async def update_agent_settings(
+    payload: AgentSettingsUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Liga ou desliga o agente James para o usuario atual."""
+    current_user.agent_enabled = payload.agent_enabled
+    await db.commit()
+    return AgentSettingsOut(agent_enabled=current_user.agent_enabled)

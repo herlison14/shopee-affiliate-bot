@@ -14,8 +14,8 @@ from services.agent_service import run_agent_cycle
 pytestmark = pytest.mark.anyio
 
 
-async def _create_user(db) -> User:
-    user = User(email="agentuser@example.com", hashed_password=hash_password("senha123456"))
+async def _create_user(db, *, email="agentuser@example.com", agent_enabled=True) -> User:
+    user = User(email=email, hashed_password=hash_password("senha123456"), agent_enabled=agent_enabled)
     db.add(user)
     await db.commit()
     await db.refresh(user)
@@ -109,5 +109,68 @@ async def test_refreshes_underperforming_campaign_once():
     async with database.AsyncSessionLocal() as db:
         actions = (
             await db.execute(select(AgentAction).where(AgentAction.campaign_id == stale_id))
+        ).scalars().all()
+        assert len(actions) == 1
+
+
+async def test_ignores_users_with_agent_disabled():
+    async with database.AsyncSessionLocal() as db:
+        user = await _create_user(db, email="disableduser@example.com", agent_enabled=False)
+        old_draft = Campaign(
+            user_id=user.id,
+            product_name="Draft de usuario com agente desligado",
+            product_url="https://shopee.com.br/disabled",
+            status="draft",
+            created_at=database.utcnow() - timedelta(hours=48),
+        )
+        db.add(old_draft)
+        await db.commit()
+        draft_id = old_draft.id
+
+    result = await run_agent_cycle()
+    assert result["campanhas_promovidas"] == 0
+
+    async with database.AsyncSessionLocal() as db:
+        draft = await db.get(Campaign, draft_id)
+        assert draft.status == "draft"
+
+
+async def test_suggests_replicating_campaign_with_sale_once():
+    async with database.AsyncSessionLocal() as db:
+        user = await _create_user(db, email="topperformer@example.com")
+        campaign = Campaign(
+            user_id=user.id,
+            product_name="Produto que vendeu bem",
+            product_url="https://shopee.com.br/sucesso",
+            status="posted",
+        )
+        db.add(campaign)
+        await db.commit()
+        campaign_id = campaign.id
+
+        db.add(
+            Commission(
+                campaign_id=campaign_id,
+                order_id="PED-SUCESSO",
+                sale_amount=200,
+                commission_amount=20,
+                platform_fee=4,
+            )
+        )
+        await db.commit()
+
+    result = await run_agent_cycle()
+    assert result["sugestoes_de_replicacao"] == 1
+
+    result2 = await run_agent_cycle()
+    assert result2["sugestoes_de_replicacao"] == 0
+
+    async with database.AsyncSessionLocal() as db:
+        actions = (
+            await db.execute(
+                select(AgentAction).where(
+                    AgentAction.campaign_id == campaign_id, AgentAction.action_type == "sugerir_replicar"
+                )
+            )
         ).scalars().all()
         assert len(actions) == 1

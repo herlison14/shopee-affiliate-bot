@@ -66,3 +66,11 @@ class AgentActionOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class AgentSettingsOut(BaseModel):
+    agent_enabled: bool
+
+
+class AgentSettingsUpdate(BaseModel):
+    agent_enabled: bool

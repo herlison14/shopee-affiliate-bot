@@ -8,7 +8,24 @@ export default function DashboardPage() {
   const { user, logout } = useAuth()
   const { campaigns, loading, error, createCampaign, deleteCampaign } = useCampaigns()
   const { mcpUrl, loading: mcpLoading, error: mcpError, regenerate } = useMcpUrl()
-  const { actions: agentActions, loading: agentLoading, error: agentError } = useAgentActions()
+  const {
+    actions: agentActions,
+    loading: agentLoading,
+    error: agentError,
+    agentEnabled,
+    settingsLoading,
+    toggleAgentEnabled,
+  } = useAgentActions()
+  const [togglingAgent, setTogglingAgent] = useState(false)
+
+  const handleToggleAgent = async () => {
+    setTogglingAgent(true)
+    try {
+      await toggleAgentEnabled(!agentEnabled)
+    } finally {
+      setTogglingAgent(false)
+    }
+  }
   const [copied, setCopied] = useState(false)
   const [regenerating, setRegenerating] = useState(false)
 
@@ -141,10 +158,22 @@ export default function DashboardPage() {
         </section>
 
         <section className="mb-8 rounded-xl bg-white p-6 shadow-sm">
-          <h2 className="mb-1 text-lg font-semibold">James, seu agente autônomo</h2>
+          <div className="mb-1 flex items-center justify-between">
+            <h2 className="text-lg font-semibold">James, seu agente autônomo</h2>
+            <button
+              onClick={handleToggleAgent}
+              disabled={settingsLoading || togglingAgent}
+              className={`whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold disabled:opacity-50 ${
+                agentEnabled ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+              }`}
+            >
+              {togglingAgent ? '...' : agentEnabled ? 'Ativo · clique para desligar' : 'Desligado · clique para ativar'}
+            </button>
+          </div>
           <p className="mb-4 text-sm text-gray-500">
-            James roda em background e age sozinho: promove rascunhos esquecidos e renova
-            legendas de campanhas que não venderam, sem você precisar pedir.
+            James roda em background e age sozinho: promove rascunhos esquecidos, renova
+            legendas de campanhas que não venderam e sugere replicar campanhas que já venderam
+            — sem você precisar pedir.
           </p>
           {agentLoading && <p className="text-sm text-gray-500">Carregando...</p>}
           {agentError && <p className="text-sm text-red-500">{agentError}</p>}

@@ -13,7 +13,7 @@ class Commission(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     campaign_id: Mapped[str] = mapped_column(String(36), ForeignKey("campaigns.id"), nullable=False)
 
-    order_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    order_id: Mapped[str] = mapped_column(String(128), nullable=False, unique=True, index=True)
     sale_amount: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
     commission_amount: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
     platform_fee: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)

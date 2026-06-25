@@ -22,6 +22,7 @@ class User(Base):
     mcp_token: Mapped[str] = mapped_column(String(64), unique=True, nullable=True, index=True)
 
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    agent_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
     campaigns = relationship("Campaign", back_populates="owner", cascade="all, delete-orphan")

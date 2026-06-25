@@ -47,6 +47,28 @@ async def exchange_code_for_token(code: str, shop_id: str) -> dict:
         return resp.json()
 
 
+def verify_push_signature(url: str, raw_body: bytes, signature: str | None) -> bool:
+    """Valida a assinatura HMAC-SHA256 das notificacoes push da Shopee.
+
+    A Shopee assina o payload como HMAC-SHA256("{url}|{body}", partner_key) e envia
+    o resultado (hex) no header Authorization. Enquanto SHOPEE_CONSUMER_SECRET nao
+    estiver configurado (app ainda nao aprovado), a validacao e pulada.
+    """
+    if not settings.SHOPEE_CONSUMER_SECRET:
+        return True
+
+    if not signature:
+        return False
+
+    base_string = f"{url}|{raw_body.decode()}"
+    expected = hmac.new(
+        settings.SHOPEE_CONSUMER_SECRET.encode(),
+        base_string.encode(),
+        hashlib.sha256,
+    ).hexdigest()
+    return hmac.compare_digest(expected, signature)
+
+
 async def refresh_access_token(refresh_token: str, shop_id: str) -> dict:
     timestamp = int(time.time())
     path = "/api/v2/auth/access_token/get"

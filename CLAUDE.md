@@ -1,6 +1,20 @@
 # Shopee Affiliate Bot — Memória do Projeto
 
-## Sobre o projeto
+> Este repositório tem dois projetos distintos:
+> 1. **ShopeeViral.AI** (`backend/` + `frontend/`) — SaaS novo, ver seção abaixo.
+> 2. **Shopee Affiliate Bot** (raiz: `main.py`, `scraper/`, `dashboard/` etc.) — bot de scraping antigo, documentado no restante deste arquivo.
+
+## ShopeeViral.AI (backend/ + frontend/)
+
+SaaS para afiliados Shopee: gera campanhas com legenda/hashtags via IA (Claude), rastreia comissões, e expõe um servidor MCP por usuário para operar tudo por conversa (Claude Desktop, ChatGPT).
+
+- **Stack**: FastAPI + SQLAlchemy async + Alembic + PostgreSQL (`backend/`); React + Vite + Tailwind (`frontend/`)
+- **Deploy**: Render (`backend/`, autoDeploy no push pra `main`) + Vercel (`frontend/`)
+- **Agente autônomo "James"**: roda em background via APScheduler, promove rascunhos esquecidos, renova legendas sem venda, sugere replicar campanhas de sucesso — cada usuário liga/desliga em `agent_enabled`
+- **Antes de comitar**: seguir o checklist em [CONTRIBUTING.md](./CONTRIBUTING.md) — testes do backend, build do frontend, validação pós-deploy
+- Pendências e decisões de negócio (chaves Shopee, pricing) ficam na memória do Claude, não aqui
+
+## Sobre o projeto (bot de scraping antigo)
 Bot de automação de marketing de afiliados da Shopee com geração de copy por IA, postagem automática no Shopee Videos e TikTok, e dashboard Streamlit.
 
 ## Dados do usuário

@@ -20,7 +20,9 @@ class Campaign(Base):
     caption: Mapped[str] = mapped_column(Text, nullable=True)
     hashtags: Mapped[str] = mapped_column(Text, nullable=True)
 
-    status: Mapped[str] = mapped_column(String(32), default="draft")  # draft|scheduled|posted|failed
+    status: Mapped[str] = mapped_column(String(32), default="draft")  # draft|scheduled|posted|failed|needs_review
+    status_detail: Mapped[str] = mapped_column(Text, nullable=True)
+    posted_url: Mapped[str] = mapped_column(String(1024), nullable=True)
     scheduled_for: Mapped[datetime] = mapped_column(DateTime, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)

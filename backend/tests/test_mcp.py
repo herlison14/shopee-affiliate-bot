@@ -1,3 +1,5 @@
+import json
+
 import pytest
 
 pytestmark = pytest.mark.anyio
@@ -11,6 +13,14 @@ async def _mcp_call(client, mcp_token, method, params=None, request_id=1):
     async with client.stream("POST", f"/agent/{mcp_token}/mcp", json=payload, headers=headers) as resp:
         lines = [line async for line in resp.aiter_lines() if line]
         return resp.status_code, lines
+
+
+def _tool_result_json(lines):
+    """Extrai e faz parse do JSON retornado pela tool a partir das linhas SSE."""
+    data_line = next(line for line in lines if line.startswith("data:"))
+    envelope = json.loads(data_line[len("data:"):].strip())
+    text = envelope["result"]["content"][0]["text"]
+    return json.loads(text)
 
 
 async def _register_and_get_mcp_token(client):
@@ -54,6 +64,56 @@ async def test_mcp_create_and_list_campaign(client):
     )
     assert status == 200
     assert any("Caneca termica" in line for line in lines)
+
+
+async def test_mcp_dedup_and_status_update(client):
+    mcp_token = await _register_and_get_mcp_token(client)
+
+    status, lines = await _mcp_call(
+        client,
+        mcp_token,
+        "tools/call",
+        {"name": "existe_campanha_para_produto", "arguments": {"url_produto": "https://shopee.com.br/dedup"}},
+        request_id=1,
+    )
+    assert status == 200
+    assert _tool_result_json(lines)["existe"] is False
+
+    status, lines = await _mcp_call(
+        client,
+        mcp_token,
+        "tools/call",
+        {
+            "name": "criar_campanha",
+            "arguments": {"nome_produto": "Produto dedup", "url_produto": "https://shopee.com.br/dedup"},
+        },
+        request_id=2,
+    )
+    assert status == 200
+    campaign_id = _tool_result_json(lines)["id"]
+
+    status, lines = await _mcp_call(
+        client,
+        mcp_token,
+        "tools/call",
+        {"name": "existe_campanha_para_produto", "arguments": {"url_produto": "https://shopee.com.br/dedup"}},
+        request_id=3,
+    )
+    assert status == 200
+    assert _tool_result_json(lines)["existe"] is True
+
+    status, lines = await _mcp_call(
+        client,
+        mcp_token,
+        "tools/call",
+        {
+            "name": "atualizar_status_campanha",
+            "arguments": {"campaign_id": campaign_id, "status": "needs_review", "detalhe": "video nao encontrado"},
+        },
+        request_id=4,
+    )
+    assert status == 200
+    assert _tool_result_json(lines)["status"] == "needs_review"
 
 
 async def test_mcp_rejects_invalid_token(client):

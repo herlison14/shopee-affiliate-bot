@@ -17,7 +17,10 @@ mcp = FastMCP(
         "dados do usuario dono do token presente na URL. O agente autonomo James roda em "
         "background e tambem toma acoes (promove rascunhos, renova legendas sem vendas, "
         "sugere replicar campanhas que venderam); use 'historico_agente' para ver o que "
-        "ele ja fez e 'definir_agente_ativo' para liga-lo ou desliga-lo."
+        "ele ja fez e 'definir_agente_ativo' para liga-lo ou desliga-lo. Use "
+        "'existe_campanha_para_produto' antes de criar uma campanha para evitar "
+        "duplicar produto, e 'atualizar_status_campanha' apos tentar postar de "
+        "verdade (nunca reporte 'posted' sem confirmar)."
     ),
     stateless_http=True,
     streamable_http_path="/mcp",
@@ -101,6 +104,59 @@ async def criar_campanha(
             "hashtags": campaign.hashtags,
             "status": campaign.status,
         }
+
+
+@mcp.tool()
+async def existe_campanha_para_produto(ctx: Context, url_produto: str) -> dict:
+    """Verifica se ja existe uma campanha para essa URL de produto (use antes de criar
+    uma campanha nova, para evitar duplicar/repostar o mesmo produto)."""
+    user = await _get_user(ctx)
+    async with database.AsyncSessionLocal() as db:
+        result = await db.execute(
+            select(Campaign).where(Campaign.user_id == user.id, Campaign.product_url == url_produto)
+        )
+        existentes = result.scalars().all()
+        return {
+            "existe": len(existentes) > 0,
+            "campanhas": [{"id": c.id, "status": c.status} for c in existentes],
+        }
+
+
+VALID_STATUSES = {"draft", "scheduled", "posted", "failed", "needs_review"}
+
+
+@mcp.tool()
+async def atualizar_status_campanha(
+    ctx: Context,
+    campaign_id: str,
+    status: str,
+    detalhe: str | None = None,
+    url_postagem: str | None = None,
+) -> dict:
+    """Atualiza o status de uma campanha apos uma tentativa de postagem.
+
+    status deve ser um de: draft, scheduled, posted, failed, needs_review.
+    So reporte 'posted' se a postagem foi de fato confirmada — caso contrario,
+    use 'needs_review' com o 'detalhe' explicando o que aconteceu.
+    """
+    if status not in VALID_STATUSES:
+        return {"erro": f"Status invalido. Use um de: {sorted(VALID_STATUSES)}"}
+
+    user = await _get_user(ctx)
+    async with database.AsyncSessionLocal() as db:
+        result = await db.execute(
+            select(Campaign).where(Campaign.id == campaign_id, Campaign.user_id == user.id)
+        )
+        campaign = result.scalar_one_or_none()
+        if not campaign:
+            return {"erro": "Campanha nao encontrada"}
+
+        campaign.status = status
+        campaign.status_detail = detalhe
+        if url_postagem is not None:
+            campaign.posted_url = url_postagem
+        await db.commit()
+        return {"id": campaign.id, "status": campaign.status}
 
 
 @mcp.tool()

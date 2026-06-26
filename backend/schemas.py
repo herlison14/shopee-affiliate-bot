@@ -44,11 +44,22 @@ class CampaignOut(BaseModel):
     caption: str | None
     hashtags: str | None
     status: str
+    status_detail: str | None = None
+    posted_url: str | None = None
     scheduled_for: datetime | None
     created_at: datetime
 
     class Config:
         from_attributes = True
+
+
+VALID_CAMPAIGN_STATUSES = {"draft", "scheduled", "posted", "failed", "needs_review"}
+
+
+class CampaignStatusUpdate(BaseModel):
+    status: str
+    status_detail: str | None = None
+    posted_url: str | None = None
 
 
 class CommissionWebhook(BaseModel):

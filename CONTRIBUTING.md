@@ -36,6 +36,17 @@ Nunca fazer sem confirmação explícita do usuário antes:
 - Apagar banco de dados ou tabelas
 - Editar `requirements.txt` removendo pins sem testar a resolução completa primeiro
 
+## CLAUDE.md — atualizar junto de todo commit relevante
+
+Sempre que um commit mudar arquitetura, decisão técnica ou comportamento de algo descrito
+na seção "ShopeeViral.AI" do [CLAUDE.md](./CLAUDE.md) (ex: nova feature do backend/frontend,
+mudança de estratégia como a decisão de não automatizar navegação na Shopee, novo
+endpoint/rota pública), **atualizar o CLAUDE.md no mesmo commit** (ou em commit imediatamente
+seguinte) e dar push junto. Não deixar o CLAUDE.md desatualizado em relação ao código.
+
+Commits que são só limpeza/refactor sem mudança de comportamento não precisam tocar o
+CLAUDE.md.
+
 ## Memória do projeto
 
 Decisões e pendências de negócio (chaves de API, integrações externas, prazos) ficam documentadas no sistema de memória do Claude, não aqui. Este arquivo é só sobre *como* validar uma mudança de código antes de subir.

@@ -10,6 +10,8 @@ vez de `posted`.
 import asyncio
 from pathlib import Path
 
+from automation.stealth import aplicar_stealth
+
 SHOPEE_VIDEO_URLS = [
     "https://affiliate.shopee.com.br/video/upload",
     "https://affiliate.shopee.com.br/creative/video",
@@ -64,6 +66,7 @@ async def postar_video_async(
 
         context = browser.contexts[0] if browser.contexts else await browser.new_context()
         page = await context.new_page()
+        await aplicar_stealth(context, page)
 
         upload_url = await _achar_url_de_upload(page)
         if not upload_url:

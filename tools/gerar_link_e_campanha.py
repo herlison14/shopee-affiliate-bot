@@ -22,9 +22,13 @@ import asyncio
 import json
 import os
 import sys
+from pathlib import Path
 
 import httpx
 from playwright.async_api import async_playwright
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from automation.stealth import aplicar_stealth  # noqa: E402
 
 AFFILIATE_URL = "https://affiliate.shopee.com.br"
 
@@ -51,6 +55,8 @@ async def gerar_link_afiliado(product_url: str) -> str | None:
             break
     if not page:
         page = context.pages[0] if context.pages else await context.new_page()
+
+    await aplicar_stealth(context, page)
 
     try:
         await page.goto(f"{AFFILIATE_URL}/offer/custom_link", wait_until="networkidle", timeout=30000)

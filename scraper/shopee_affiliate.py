@@ -102,6 +102,23 @@ async def launch_browser(headless: bool = True):
                 break
         if not page:
             page = context.pages[0] if context.pages else await context.new_page()
+
+        # Mascara sinais de automacao: o Chrome expoe navigator.webdriver=true
+        # assim que qualquer cliente CDP se conecta a uma aba, independente de
+        # como o Chrome foi aberto. Sem isso, a Shopee detecta a automacao e
+        # forca reautenticacao (confirmado: navegacao manual funciona, via
+        # Playwright redireciona pra login a cada page.goto()).
+        stealth_script = """
+            Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
+            Object.defineProperty(navigator, 'plugins', {get: () => [1, 2, 3]});
+            window.chrome = window.chrome || { runtime: {} };
+        """
+        await context.add_init_script(stealth_script)
+        try:
+            await page.evaluate(stealth_script)
+        except Exception:
+            pass
+
         _cdp_mode = True
         return playwright, browser, context, page
     except Exception:

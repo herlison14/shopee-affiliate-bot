@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './hooks/useAuth'
 import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
+import StorefrontPage from './pages/StorefrontPage'
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth()
@@ -16,6 +17,7 @@ function AppRoutes() {
     <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/vitrine/:userId" element={<StorefrontPage />} />
       <Route
         path="/dashboard"
         element={

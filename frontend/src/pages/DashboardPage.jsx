@@ -1,13 +1,48 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { useCampaigns } from '../hooks/useCampaigns'
 import { useMcpUrl } from '../hooks/useMcpUrl'
 import { useAgentActions } from '../hooks/useAgentActions'
+import { useStorefront } from '../hooks/useStorefront'
 
 export default function DashboardPage() {
   const { user, logout } = useAuth()
   const { campaigns, loading, error, createCampaign, deleteCampaign } = useCampaigns()
   const { mcpUrl, loading: mcpLoading, error: mcpError, regenerate } = useMcpUrl()
+  const {
+    settings: storefrontSettings,
+    loading: storefrontLoading,
+    error: storefrontError,
+    updateSettings: updateStorefrontSettings,
+  } = useStorefront()
+  const [storefrontName, setStorefrontName] = useState('')
+  const [storefrontBio, setStorefrontBio] = useState('')
+  const [savingStorefront, setSavingStorefront] = useState(false)
+  const [storefrontCopied, setStorefrontCopied] = useState(false)
+
+  useEffect(() => {
+    if (storefrontSettings) {
+      setStorefrontName(storefrontSettings.storefront_name)
+      setStorefrontBio(storefrontSettings.storefront_bio || '')
+    }
+  }, [storefrontSettings])
+
+  const handleSaveStorefront = async (e) => {
+    e.preventDefault()
+    setSavingStorefront(true)
+    try {
+      await updateStorefrontSettings(storefrontName, storefrontBio || null)
+    } finally {
+      setSavingStorefront(false)
+    }
+  }
+
+  const handleCopyStorefront = async () => {
+    if (!storefrontSettings) return
+    await navigator.clipboard.writeText(storefrontSettings.storefront_url)
+    setStorefrontCopied(true)
+    setTimeout(() => setStorefrontCopied(false), 2000)
+  }
   const {
     actions: agentActions,
     loading: agentLoading,
@@ -171,6 +206,68 @@ export default function DashboardPage() {
                 </button>
               </div>
             </div>
+          )}
+        </section>
+
+        <section className="mb-8 rounded-xl bg-white p-6 shadow-sm">
+          <h2 className="mb-1 text-lg font-semibold">Sua vitrine pública</h2>
+          <p className="mb-4 text-sm text-gray-500">
+            Uma página pública (estilo link na bio) com as campanhas que já têm link de
+            afiliado e estão agendadas ou publicadas — pronta para compartilhar com seus
+            seguidores.
+          </p>
+          {storefrontLoading && <p className="text-sm text-gray-500">Carregando...</p>}
+          {storefrontError && <p className="text-sm text-red-500">{storefrontError}</p>}
+          {storefrontSettings && (
+            <>
+              <form onSubmit={handleSaveStorefront} className="mb-3 grid gap-3 sm:grid-cols-2">
+                <input
+                  type="text"
+                  placeholder="Nome da vitrine"
+                  required
+                  value={storefrontName}
+                  onChange={(e) => setStorefrontName(e.target.value)}
+                  className="rounded-lg border px-3 py-2 text-sm"
+                />
+                <input
+                  type="text"
+                  placeholder="Bio (opcional)"
+                  value={storefrontBio}
+                  onChange={(e) => setStorefrontBio(e.target.value)}
+                  className="rounded-lg border px-3 py-2 text-sm"
+                />
+                <button
+                  type="submit"
+                  disabled={savingStorefront}
+                  className="rounded-lg bg-shopee px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 sm:col-span-2"
+                >
+                  {savingStorefront ? 'Salvando...' : 'Salvar'}
+                </button>
+              </form>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <input
+                  type="text"
+                  readOnly
+                  value={storefrontSettings.storefront_url}
+                  onFocus={(e) => e.target.select()}
+                  className="flex-1 rounded-lg border bg-gray-50 px-3 py-2 text-xs text-gray-700 sm:text-sm"
+                />
+                <button
+                  onClick={handleCopyStorefront}
+                  className="whitespace-nowrap rounded-lg border px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
+                >
+                  {storefrontCopied ? 'Copiado!' : 'Copiar'}
+                </button>
+                <a
+                  href={storefrontSettings.storefront_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="whitespace-nowrap rounded-lg bg-shopee px-4 py-2 text-center text-sm font-semibold text-white hover:opacity-90"
+                >
+                  Ver vitrine
+                </a>
+              </div>
+            </>
           )}
         </section>
 

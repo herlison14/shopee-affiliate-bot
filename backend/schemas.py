@@ -85,3 +85,26 @@ class AgentSettingsOut(BaseModel):
 
 class AgentSettingsUpdate(BaseModel):
     agent_enabled: bool
+
+
+class StorefrontSettingsOut(BaseModel):
+    storefront_name: str
+    storefront_bio: str | None = None
+    storefront_url: str
+
+
+class StorefrontSettingsUpdate(BaseModel):
+    storefront_name: str = Field(min_length=1, max_length=255)
+    storefront_bio: str | None = Field(default=None, max_length=500)
+
+
+class StorefrontCampaignOut(BaseModel):
+    product_name: str
+    affiliate_link: str
+    featured: bool
+
+
+class StorefrontOut(BaseModel):
+    storefront_name: str
+    storefront_bio: str | None
+    campaigns: list[StorefrontCampaignOut]

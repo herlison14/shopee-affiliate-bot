@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import String, Boolean, DateTime
+from sqlalchemy import String, Boolean, DateTime, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database import Base, utcnow
@@ -14,6 +14,9 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     full_name: Mapped[str] = mapped_column(String(255), nullable=True)
+
+    storefront_name: Mapped[str] = mapped_column(String(255), nullable=True)
+    storefront_bio: Mapped[str] = mapped_column(Text, nullable=True)
 
     shopee_access_token: Mapped[str] = mapped_column(String(512), nullable=True)
     shopee_refresh_token: Mapped[str] = mapped_column(String(512), nullable=True)

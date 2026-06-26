@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from config import settings
-from routers import agent, auth, campaigns, webhooks
+from routers import agent, auth, campaigns, storefront, webhooks
 from mcp_server import mcp as mcp_server
 from services.agent_service import run_agent_cycle
 
@@ -57,6 +57,7 @@ app.include_router(auth.router)
 app.include_router(campaigns.router)
 app.include_router(webhooks.router)
 app.include_router(agent.router)
+app.include_router(storefront.router)
 
 app.mount("/agent/{token}", mcp_asgi_app)
 

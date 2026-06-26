@@ -6,13 +6,33 @@
 
 ## ShopeeViral.AI (backend/ + frontend/)
 
-SaaS para afiliados Shopee: gera campanhas com legenda/hashtags via IA (Claude), rastreia comissões, e expõe um servidor MCP por usuário para operar tudo por conversa (Claude Desktop, ChatGPT).
+SaaS para afiliados Shopee: gera campanhas com legenda/hashtags via IA (Claude), rastreia comissões, expõe um servidor MCP por usuário (Claude Desktop, ChatGPT) e tem uma vitrine pública por usuário.
 
 - **Stack**: FastAPI + SQLAlchemy async + Alembic + PostgreSQL (`backend/`); React + Vite + Tailwind (`frontend/`)
 - **Deploy**: Render (`backend/`, autoDeploy no push pra `main`) + Vercel (`frontend/`)
 - **Agente autônomo "James"**: roda em background via APScheduler, promove rascunhos esquecidos, renova legendas sem venda, sugere replicar campanhas de sucesso — cada usuário liga/desliga em `agent_enabled`
+- **Vitrine pública**: `/vitrine/:userId` no frontend, alimentada por `GET /api/v1/public/storefront/{user_id}` — só mostra campanhas com `affiliate_link` preenchido e status `posted`/`scheduled`. Editável em "Sua vitrine pública" no dashboard
 - **Antes de comitar**: seguir o checklist em [CONTRIBUTING.md](./CONTRIBUTING.md) — testes do backend, build do frontend, validação pós-deploy
-- Pendências e decisões de negócio (chaves Shopee, pricing) ficam na memória do Claude, não aqui
+
+### Importante: automação de navegador no site da Shopee é proibitiva
+
+A Shopee detecta automação de navegador (Playwright/CDP, extensões de automação) mesmo com
+patches de stealth (mascarar `navigator.webdriver` etc.) e perfil real do Chrome — bate
+CAPTCHA/verificação de novo após poucas tentativas. **Decisão**: não automatizar navegação
+no site da Shopee (descoberta de produtos, geração de link, postagem) por scripts —
+risco real de a conta do usuário ser restringida. `tools/automation/orchestrator.py` existe
+no repo mas não deve ser usado para esse fim.
+
+Fluxo seguro que funciona: usuário navega manualmente e exporta uma planilha Excel
+(produto, preço, vendas, comissão, URL) → Claude lê a planilha → cria campanhas via MCP
+automaticamente a partir daí. Link de afiliado (`Obter link`) continua sendo clicado
+manualmente pelo usuário, produto por produto.
+
+`affiliate.shopee.com.br/dashboard` tem métricas reais de comissão/pedidos (Relatório de
+vendas, Relatório de cliques) que o bot antigo nunca usou — possível fonte de dados reais
+de comissão no futuro, mas capturar isso também exigiria automação detectável.
+
+Pendências e decisões de negócio (chaves Shopee, pricing) ficam na memória do Claude, não aqui.
 
 ## Sobre o projeto (bot de scraping antigo)
 Bot de automação de marketing de afiliados da Shopee com geração de copy por IA, postagem automática no Shopee Videos e TikTok, e dashboard Streamlit.

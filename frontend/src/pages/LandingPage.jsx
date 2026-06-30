@@ -37,7 +37,7 @@ export default function LandingPage() {
         <span className="mb-4 inline-block rounded-full bg-orange-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-shopee">
           Plataforma de IA para afiliados Shopee
         </span>
-        <h1 className="mb-4 text-4xl font-extrabold leading-tight text-gray-900 sm:text-5xl">
+        <h1 className="mb-4 text-3xl font-extrabold leading-tight text-gray-900 sm:text-5xl">
           Suas campanhas de afiliado, <span className="text-shopee">criadas por IA</span>
         </h1>
         <p className="mb-8 text-lg text-gray-600">

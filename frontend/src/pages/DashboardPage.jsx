@@ -284,7 +284,7 @@ export default function DashboardPage() {
         </section>
 
         <section className="mb-8 rounded-xl bg-white p-5 shadow-sm sm:p-6">
-          <div className="mb-1 flex items-center justify-between">
+          <div className="mb-1 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="text-lg font-semibold">James, seu agente autônomo</h2>
             <button
               onClick={handleToggleAgent}

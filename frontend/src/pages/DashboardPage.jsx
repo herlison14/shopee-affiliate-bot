@@ -6,6 +6,7 @@ import { useAgentActions } from '../hooks/useAgentActions'
 import { useStorefront } from '../hooks/useStorefront'
 import CampaignCard from '../components/CampaignCard'
 import ImportProducts from '../components/ImportProducts'
+import InstallPrompt from '../components/InstallPrompt'
 
 export default function DashboardPage() {
   const { user, logout } = useAuth()
@@ -118,19 +119,21 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="flex items-center justify-between bg-white px-6 py-4 shadow-sm">
-        <h1 className="text-xl font-bold text-shopee">ShopeeViral.AI</h1>
-        <div className="flex items-center gap-4">
-          <span className="text-sm text-gray-600">{user?.full_name || user?.email}</span>
-          <button onClick={logout} className="text-sm text-gray-500 hover:text-shopee">
+      <header className="sticky top-0 z-10 flex items-center justify-between gap-3 bg-white px-4 py-4 shadow-sm pt-[calc(1rem+env(safe-area-inset-top))] px-safe sm:px-6">
+        <h1 className="shrink-0 text-xl font-bold text-shopee">ShopeeViral.AI</h1>
+        <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+          <span className="truncate text-sm text-gray-600">{user?.full_name || user?.email}</span>
+          <button onClick={logout} className="shrink-0 text-sm text-gray-500 hover:text-shopee">
             Sair
           </button>
         </div>
       </header>
 
-      <main className="mx-auto max-w-4xl px-6 py-8">
+      <main className="mx-auto max-w-4xl px-4 py-8 pb-[calc(2rem+env(safe-area-inset-bottom))] px-safe sm:px-6">
+        <InstallPrompt />
+
         {!loading && campaigns.length === 0 && (
-          <section className="mb-8 rounded-xl border border-orange-100 bg-orange-50 p-6">
+          <section className="mb-8 rounded-xl border border-orange-100 bg-orange-50 p-5 sm:p-6">
             <h2 className="mb-2 text-lg font-semibold text-gray-900">
               Bem-vindo(a)! Vamos criar sua primeira campanha
             </h2>
@@ -146,7 +149,7 @@ export default function DashboardPage() {
           </section>
         )}
 
-        <section className="mb-8 rounded-xl bg-white p-6 shadow-sm">
+        <section className="mb-8 rounded-xl bg-white p-5 shadow-sm sm:p-6">
           <h2 className="mb-4 text-lg font-semibold">Nova campanha</h2>
           <form onSubmit={handleCreate} className="grid gap-3 sm:grid-cols-3">
             <input
@@ -185,7 +188,7 @@ export default function DashboardPage() {
 
         <ImportProducts onImported={bulkImport} />
 
-        <section className="mb-8 rounded-xl bg-white p-6 shadow-sm">
+        <section className="mb-8 rounded-xl bg-white p-5 shadow-sm sm:p-6">
           <h2 className="mb-1 text-lg font-semibold">Conectar com IA</h2>
           <p className="mb-4 text-sm text-gray-500">
             Cole esta URL no Claude Desktop (Settings → Connectors) ou em outro cliente MCP para
@@ -221,7 +224,7 @@ export default function DashboardPage() {
           )}
         </section>
 
-        <section className="mb-8 rounded-xl bg-white p-6 shadow-sm">
+        <section className="mb-8 rounded-xl bg-white p-5 shadow-sm sm:p-6">
           <h2 className="mb-1 text-lg font-semibold">Sua vitrine pública</h2>
           <p className="mb-4 text-sm text-gray-500">
             Uma página pública (estilo link na bio) com as campanhas que já têm link de
@@ -283,8 +286,8 @@ export default function DashboardPage() {
           )}
         </section>
 
-        <section className="mb-8 rounded-xl bg-white p-6 shadow-sm">
-          <div className="mb-1 flex items-center justify-between">
+        <section className="mb-8 rounded-xl bg-white p-5 shadow-sm sm:p-6">
+          <div className="mb-1 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="text-lg font-semibold">James, seu agente autônomo</h2>
             <button
               onClick={handleToggleAgent}
@@ -323,7 +326,7 @@ export default function DashboardPage() {
           </ul>
         </section>
 
-        <section className="rounded-xl bg-white p-6 shadow-sm">
+        <section className="rounded-xl bg-white p-5 shadow-sm sm:p-6">
           <h2 className="mb-4 text-lg font-semibold">Campanhas</h2>
           {loading && <p className="text-sm text-gray-500">Carregando...</p>}
           {error && <p className="text-sm text-red-500">{error}</p>}

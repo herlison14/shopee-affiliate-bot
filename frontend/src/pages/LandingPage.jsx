@@ -26,18 +26,18 @@ const FEATURES = [
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="flex items-center justify-between px-6 py-5">
+      <header className="flex items-center justify-between px-4 py-5 pt-[calc(1.25rem+env(safe-area-inset-top))] px-safe sm:px-6">
         <span className="text-xl font-bold text-shopee">ShopeeViral.AI</span>
         <Link to="/login" className="text-sm font-medium text-gray-600 hover:text-shopee">
           Entrar
         </Link>
       </header>
 
-      <main className="mx-auto max-w-3xl px-6 pb-20 pt-10 text-center">
+      <main className="mx-auto max-w-3xl px-4 pb-20 pt-10 text-center px-safe sm:px-6">
         <span className="mb-4 inline-block rounded-full bg-orange-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-shopee">
           Plataforma de IA para afiliados Shopee
         </span>
-        <h1 className="mb-4 text-4xl font-extrabold leading-tight text-gray-900 sm:text-5xl">
+        <h1 className="mb-4 text-3xl font-extrabold leading-tight text-gray-900 sm:text-5xl">
           Suas campanhas de afiliado, <span className="text-shopee">criadas por IA</span>
         </h1>
         <p className="mb-8 text-lg text-gray-600">

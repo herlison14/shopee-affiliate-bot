@@ -1,4 +1,6 @@
 -r requirements.txt
 pytest==8.0.0
-anyio==4.3.0
+# anyio>=4.5 e obrigatorio por mcp==1.28.0 (o pin antigo 4.3.0 tornava o
+# requirements-dev.txt impossivel de resolver). anthropic exige <5.
+anyio==4.14.1
 aiosqlite==0.20.0

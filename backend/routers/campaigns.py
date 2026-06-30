@@ -7,7 +7,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from database import get_db
 from models.campaign import Campaign
 from models.user import User
-from schemas import VALID_CAMPAIGN_STATUSES, CampaignCreate, CampaignOut, CampaignStatusUpdate
+from schemas import (
+    VALID_CAMPAIGN_STATUSES,
+    CampaignCreate,
+    CampaignEdit,
+    CampaignOut,
+    CampaignStatusUpdate,
+)
 from security import get_current_user
 from services.ai_service import generate_caption_and_hashtags
 
@@ -67,6 +73,31 @@ async def get_campaign(
     campaign = result.scalar_one_or_none()
     if not campaign:
         raise HTTPException(status_code=404, detail="Campanha não encontrada")
+    return campaign
+
+
+@router.patch("/{campaign_id}", response_model=CampaignOut)
+async def edit_campaign(
+    campaign_id: str,
+    payload: CampaignEdit,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Edita campos de uma campanha existente (link de afiliado, legenda, hashtags).
+    PATCH parcial: so altera os campos que vierem no corpo da requisicao."""
+    result = await db.execute(
+        select(Campaign).where(Campaign.id == campaign_id, Campaign.user_id == current_user.id)
+    )
+    campaign = result.scalar_one_or_none()
+    if not campaign:
+        raise HTTPException(status_code=404, detail="Campanha não encontrada")
+
+    changes = payload.model_dump(exclude_unset=True)
+    for field, value in changes.items():
+        setattr(campaign, field, value)
+
+    await db.commit()
+    await db.refresh(campaign)
     return campaign
 
 

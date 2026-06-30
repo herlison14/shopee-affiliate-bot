@@ -12,6 +12,7 @@ SaaS para afiliados Shopee: gera campanhas com legenda/hashtags via IA (Claude),
 - **Deploy**: Render (`backend/`, autoDeploy no push pra `main`) + Vercel (`frontend/`)
 - **Agente autônomo "James"**: roda em background via APScheduler, promove rascunhos esquecidos, renova legendas sem venda, sugere replicar campanhas de sucesso — cada usuário liga/desliga em `agent_enabled`
 - **Vitrine pública**: `/vitrine/:userId` no frontend, alimentada por `GET /api/v1/public/storefront/{user_id}` — só mostra campanhas com `affiliate_link` preenchido e status `posted`/`scheduled`. Editável em "Sua vitrine pública" no dashboard
+- **Editar campanha**: `PATCH /api/v1/campaigns/{id}` (parcial, `exclude_unset`) edita `affiliate_link`/`caption`/`hashtags`; tool MCP `definir_link_afiliado`. No frontend, `components/CampaignCard.jsx` mostra cada campanha com fluxo manual de link: botão "Gerar link" (abre `affiliate.shopee.com.br/offer/custom_link` em nova aba) + "Copiar URL do produto" + campo pra colar o link gerado. Fluxo 100% manual, sem automação (ver decisão sobre Shopee abaixo)
 - **Antes de comitar**: seguir o checklist em [CONTRIBUTING.md](./CONTRIBUTING.md) — testes do backend, build do frontend, validação pós-deploy
 
 ### Importante: automação de navegador no site da Shopee é proibitiva

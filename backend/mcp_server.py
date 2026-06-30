@@ -160,6 +160,23 @@ async def atualizar_status_campanha(
 
 
 @mcp.tool()
+async def definir_link_afiliado(ctx: Context, campaign_id: str, link_afiliado: str) -> dict:
+    """Define ou atualiza o link de afiliado de uma campanha existente. Use depois de
+    gerar o link na Shopee, para a campanha aparecer na vitrine publica."""
+    user = await _get_user(ctx)
+    async with database.AsyncSessionLocal() as db:
+        result = await db.execute(
+            select(Campaign).where(Campaign.id == campaign_id, Campaign.user_id == user.id)
+        )
+        campaign = result.scalar_one_or_none()
+        if not campaign:
+            return {"erro": "Campanha nao encontrada"}
+        campaign.affiliate_link = link_afiliado
+        await db.commit()
+        return {"id": campaign.id, "link_afiliado": campaign.affiliate_link}
+
+
+@mcp.tool()
 async def remover_campanha(ctx: Context, campaign_id: str) -> dict:
     """Remove uma campanha de afiliado pelo ID."""
     user = await _get_user(ctx)

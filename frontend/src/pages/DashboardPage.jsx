@@ -4,6 +4,7 @@ import { useCampaigns } from '../hooks/useCampaigns'
 import { useMcpUrl } from '../hooks/useMcpUrl'
 import { useAgentActions } from '../hooks/useAgentActions'
 import { useStorefront } from '../hooks/useStorefront'
+import CampaignCard from '../components/CampaignCard'
 
 export default function DashboardPage() {
   const { user, logout } = useAuth()
@@ -320,24 +321,12 @@ export default function DashboardPage() {
           )}
           <ul className="space-y-3">
             {campaigns.map((c) => (
-              <li key={c.id} className="rounded-lg border p-4">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="font-medium">{c.product_name}</p>
-                    <p className="text-sm text-gray-600">{c.caption}</p>
-                    <p className="text-xs text-gray-400">{c.hashtags}</p>
-                    <span className="mt-1 inline-block rounded bg-gray-100 px-2 py-0.5 text-xs">
-                      {c.status}
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => deleteCampaign(c.id)}
-                    className="text-xs text-red-500 hover:underline"
-                  >
-                    Remover
-                  </button>
-                </div>
-              </li>
+              <CampaignCard
+                key={c.id}
+                campaign={c}
+                onDelete={deleteCampaign}
+                onUpdateLink={updateAffiliateLink}
+              />
             ))}
           </ul>
         </section>

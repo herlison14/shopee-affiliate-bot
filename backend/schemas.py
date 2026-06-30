@@ -62,6 +62,15 @@ class CampaignStatusUpdate(BaseModel):
     posted_url: str | None = None
 
 
+class CampaignEdit(BaseModel):
+    """Campos editaveis de uma campanha existente. Todos opcionais: so o que vier
+    preenchido e atualizado (PATCH parcial)."""
+
+    affiliate_link: str | None = None
+    caption: str | None = None
+    hashtags: str | None = None
+
+
 class CommissionWebhook(BaseModel):
     campaign_id: str
     order_id: str

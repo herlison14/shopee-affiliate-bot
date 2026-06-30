@@ -34,5 +34,19 @@ export function useCampaigns() {
     setCampaigns((prev) => prev.filter((c) => c.id !== id))
   }
 
-  return { campaigns, loading, error, fetchCampaigns, createCampaign, deleteCampaign }
+  const updateAffiliateLink = async (id, affiliateLink) => {
+    const { data } = await api.patch(`/campaigns/${id}`, { affiliate_link: affiliateLink })
+    setCampaigns((prev) => prev.map((c) => (c.id === id ? data : c)))
+    return data
+  }
+
+  return {
+    campaigns,
+    loading,
+    error,
+    fetchCampaigns,
+    createCampaign,
+    deleteCampaign,
+    updateAffiliateLink,
+  }
 }

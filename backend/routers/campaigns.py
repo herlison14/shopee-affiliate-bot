@@ -9,6 +9,8 @@ from models.campaign import Campaign
 from models.user import User
 from schemas import (
     VALID_CAMPAIGN_STATUSES,
+    CampaignBulkCreate,
+    CampaignBulkResult,
     CampaignCreate,
     CampaignEdit,
     CampaignOut,
@@ -61,6 +63,49 @@ async def create_campaign(
     await db.commit()
     await db.refresh(campaign)
     return campaign
+
+
+@router.post("/bulk", response_model=CampaignBulkResult, status_code=201)
+async def create_campaigns_bulk(
+    payload: CampaignBulkCreate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Cria varias campanhas de uma vez (ex: importadas de uma planilha). Gera legenda/
+    hashtags via IA para cada uma. Pula produtos cuja product_url ja tem campanha
+    (dedup), para reimportar a mesma planilha nao duplicar."""
+    existentes = await db.execute(
+        select(Campaign.product_url).where(Campaign.user_id == current_user.id)
+    )
+    urls_existentes = {row[0] for row in existentes.all()}
+
+    criadas = []
+    ignoradas = 0
+    urls_neste_lote = set()
+    for item in payload.items:
+        if item.product_url in urls_existentes or item.product_url in urls_neste_lote:
+            ignoradas += 1
+            continue
+        urls_neste_lote.add(item.product_url)
+
+        caption, hashtags = await generate_caption_and_hashtags(item.product_name)
+        campaign = Campaign(
+            user_id=current_user.id,
+            product_name=item.product_name,
+            product_url=item.product_url,
+            affiliate_link=item.affiliate_link,
+            caption=caption,
+            hashtags=hashtags,
+            status="draft",
+        )
+        db.add(campaign)
+        criadas.append(campaign)
+
+    await db.commit()
+    for c in criadas:
+        await db.refresh(c)
+
+    return CampaignBulkResult(criadas=len(criadas), ignoradas_duplicadas=ignoradas, campaigns=criadas)
 
 
 @router.get("/{campaign_id}", response_model=CampaignOut)

@@ -40,6 +40,14 @@ export function useCampaigns() {
     return data
   }
 
+  const bulkImport = async (items) => {
+    const { data } = await api.post('/campaigns/bulk', { items })
+    if (data.campaigns?.length) {
+      setCampaigns((prev) => [...data.campaigns, ...prev])
+    }
+    return data
+  }
+
   return {
     campaigns,
     loading,
@@ -48,5 +56,6 @@ export function useCampaigns() {
     createCampaign,
     deleteCampaign,
     updateAffiliateLink,
+    bulkImport,
   }
 }

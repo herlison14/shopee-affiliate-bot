@@ -33,6 +33,9 @@ async def setup_db():
     database.AsyncSessionLocal = session_local
 
     async with engine.begin() as conn:
+        # drop antes do create garante estado limpo mesmo se um run anterior
+        # foi interrompido e deixou o test.db sujo (teardown nao rodou).
+        await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
 
     auth_rate_limiter._hits.clear()

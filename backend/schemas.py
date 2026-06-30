@@ -36,6 +36,16 @@ class CampaignCreate(BaseModel):
     scheduled_for: datetime | None = None
 
 
+class CampaignBulkItem(BaseModel):
+    product_name: str
+    product_url: str
+    affiliate_link: str | None = None
+
+
+class CampaignBulkCreate(BaseModel):
+    items: list[CampaignBulkItem]
+
+
 class CampaignOut(BaseModel):
     id: str
     product_name: str
@@ -51,6 +61,12 @@ class CampaignOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class CampaignBulkResult(BaseModel):
+    criadas: int
+    ignoradas_duplicadas: int
+    campaigns: list[CampaignOut]
 
 
 VALID_CAMPAIGN_STATUSES = {"draft", "scheduled", "posted", "failed", "needs_review"}

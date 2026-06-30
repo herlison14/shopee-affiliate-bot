@@ -5,10 +5,19 @@ import { useMcpUrl } from '../hooks/useMcpUrl'
 import { useAgentActions } from '../hooks/useAgentActions'
 import { useStorefront } from '../hooks/useStorefront'
 import CampaignCard from '../components/CampaignCard'
+import ImportProducts from '../components/ImportProducts'
 
 export default function DashboardPage() {
   const { user, logout } = useAuth()
-  const { campaigns, loading, error, createCampaign, deleteCampaign } = useCampaigns()
+  const {
+    campaigns,
+    loading,
+    error,
+    createCampaign,
+    deleteCampaign,
+    updateAffiliateLink,
+    bulkImport,
+  } = useCampaigns()
   const { mcpUrl, loading: mcpLoading, error: mcpError, regenerate } = useMcpUrl()
   const {
     settings: storefrontSettings,
@@ -173,6 +182,8 @@ export default function DashboardPage() {
           </form>
           {formError && <p className="mt-2 text-sm text-red-500">{formError}</p>}
         </section>
+
+        <ImportProducts onImported={bulkImport} />
 
         <section className="mb-8 rounded-xl bg-white p-6 shadow-sm">
           <h2 className="mb-1 text-lg font-semibold">Conectar com IA</h2>

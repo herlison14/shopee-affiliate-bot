@@ -6,6 +6,7 @@ import { useAgentActions } from '../hooks/useAgentActions'
 import { useStorefront } from '../hooks/useStorefront'
 import CampaignCard from '../components/CampaignCard'
 import ImportProducts from '../components/ImportProducts'
+import InstallPrompt from '../components/InstallPrompt'
 
 export default function DashboardPage() {
   const { user, logout } = useAuth()
@@ -129,6 +130,8 @@ export default function DashboardPage() {
       </header>
 
       <main className="mx-auto max-w-4xl px-4 py-8 pb-[calc(2rem+env(safe-area-inset-bottom))] px-safe sm:px-6">
+        <InstallPrompt />
+
         {!loading && campaigns.length === 0 && (
           <section className="mb-8 rounded-xl border border-orange-100 bg-orange-50 p-5 sm:p-6">
             <h2 className="mb-2 text-lg font-semibold text-gray-900">

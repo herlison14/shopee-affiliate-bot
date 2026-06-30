@@ -123,7 +123,7 @@ export default function ImportProducts({ onImported }) {
   }
 
   return (
-    <section className="mb-8 rounded-xl bg-white p-6 shadow-sm">
+    <section className="mb-8 rounded-xl bg-white p-5 shadow-sm sm:p-6">
       <h2 className="mb-1 text-lg font-semibold">Importar produtos em lote</h2>
       <p className="mb-4 text-sm text-gray-500">
         Cole as linhas da sua planilha ou envie um arquivo CSV. Precisa ter pelo menos uma

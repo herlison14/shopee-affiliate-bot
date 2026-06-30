@@ -11,7 +11,8 @@ const STYLE = `
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 48px 16px 100px;
+    padding: calc(48px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right))
+      calc(100px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));
     position: relative;
     overflow-x: hidden;
     background: linear-gradient(-45deg, #ffdee9, #ffe9d6, #f7d6ff, #ffd1e3);

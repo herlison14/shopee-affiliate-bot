@@ -56,15 +56,20 @@ export default function LoginPage() {
             onChange={(e) => setEmail(e.target.value)}
             className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-shopee"
           />
-          <input
-            type="password"
-            placeholder="Senha"
-            required
-            minLength={6}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-shopee"
-          />
+          <div>
+            <input
+              type="password"
+              placeholder="Senha"
+              required
+              minLength={8}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-shopee"
+            />
+            {isRegister && (
+              <p className="mt-1 text-xs text-gray-400">Mínimo de 8 caracteres.</p>
+            )}
+          </div>
 
           {error && <p className="text-sm text-red-500">{error}</p>}
 

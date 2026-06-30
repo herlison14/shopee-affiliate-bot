@@ -4,10 +4,21 @@
 // So intercepta GET de mesma origem (o app no Vercel); chamadas a API (Render,
 // outra origem) e metodos != GET passam direto, sem cache.
 
-const CACHE_NAME = 'shopeeviral-v1'
+const CACHE_NAME = 'shopeeviral-v2'
 
-self.addEventListener('install', () => {
-  self.skipWaiting()
+// App shell pre-cacheado no install. Como a SPA usa rotas client-side
+// (/dashboard, /vitrine/...), a navegacao offline precisa cair no index.html;
+// pre-cachear garante isso mesmo em rotas que o usuario nunca abriu online.
+const APP_SHELL = ['/', '/index.html']
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    (async () => {
+      const cache = await caches.open(CACHE_NAME)
+      await cache.addAll(APP_SHELL)
+      self.skipWaiting()
+    })()
+  )
 })
 
 self.addEventListener('activate', (event) => {
@@ -42,8 +53,9 @@ self.addEventListener('fetch', (event) => {
         const cached = await caches.match(request)
         if (cached) return cached
         if (request.mode === 'navigate') {
-          const indexCached = await caches.match('/index.html')
-          if (indexCached) return indexCached
+          // qualquer rota da SPA cai no app shell pre-cacheado
+          const shell = (await caches.match('/index.html')) || (await caches.match('/'))
+          if (shell) return shell
         }
         throw new Error('offline e sem cache')
       }

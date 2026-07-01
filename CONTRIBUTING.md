@@ -21,10 +21,12 @@ Checklist a seguir **antes de todo commit/push** em `backend/` ou `frontend/`. B
 
 1. `npm run build` tem que passar limpo antes de comitar.
 2. Arquivo com JSX precisa de extensão `.jsx`, nunca `.js` (o build do Vercel falha silenciosamente diferente do dev local).
+3. **Root Directory da Vercel = `frontend`** (config do painel: Settings → Build and Deployment). Este repo é um monorepo com um bot Python na raiz; se o Root Directory ficar na raiz, a Vercel detecta o `requirements.txt` da raiz, instala `pandas`/`streamlit`/etc. e o build morre com `vite build ... exit 127` (`vite: not found`) em ~6s — **mesmo com `npm run build` passando localmente**. `frontend/vercel.json` tem `installCommand: npm install --include=dev` como proteção extra (Vercel às vezes pula devDependencies), mas isso só é lido se o Root Directory apontar pra `frontend`.
 
 ## Depois do push
 
 - O Render tem auto-deploy no push pra `main`. Acompanhar via API (`GET /v1/services/{id}/deploys`) até `status: live` — não assumir que passou só porque o push funcionou.
+- O Vercel faz auto-deploy no push. Se não houver acesso à API/painel da Vercel, dá pra ver o status do deploy pelo **commit status do GitHub** (contexto `Vercel`, com `target_url` e o comando `npx vercel inspect <id> --logs`). Build verde ≠ app funcionando — validar abrindo a URL de produção.
 - Mudar uma env var no Render **não reinicia o serviço automaticamente** — precisa disparar `POST /v1/services/{id}/deploys` depois.
 - Depois de `live`, validar com uma chamada real (`/health`, e pelo menos um fluxo ponta a ponta tocando o banco) — build verde não significa app funcionando.
 

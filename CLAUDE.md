@@ -9,7 +9,7 @@
 SaaS para afiliados Shopee: gera campanhas com legenda/hashtags via IA (Claude), rastreia comissões, expõe um servidor MCP por usuário (Claude Desktop, ChatGPT) e tem uma vitrine pública por usuário.
 
 - **Stack**: FastAPI + SQLAlchemy async + Alembic + PostgreSQL (`backend/`); React + Vite + Tailwind (`frontend/`)
-- **Deploy**: Render (`backend/`, autoDeploy no push pra `main`) + Vercel (`frontend/`)
+- **Deploy**: Render (`backend/`, autoDeploy no push pra `main`) + Vercel (`frontend/`). App em produção: https://frontend-chi-blond-wwm5qsco37.vercel.app. ⚠️ **Na Vercel, o Root Directory tem que ser `frontend`** (config do painel, Settings → Build and Deployment) — se ficar na raiz, a Vercel detecta o bot Python antigo (`requirements.txt` da raiz) e o build falha com `vite build ... exit 127`, mesmo passando localmente
 - **Agente autônomo "James"**: roda em background via APScheduler, promove rascunhos esquecidos, renova legendas sem venda, sugere replicar campanhas de sucesso — cada usuário liga/desliga em `agent_enabled`
 - **Vitrine pública**: `/vitrine/:userId` no frontend, alimentada por `GET /api/v1/public/storefront/{user_id}` — só mostra campanhas com `affiliate_link` preenchido e status `posted`/`scheduled`. Editável em "Sua vitrine pública" no dashboard
 - **Editar campanha**: `PATCH /api/v1/campaigns/{id}` (parcial, `exclude_unset`) edita `affiliate_link`/`caption`/`hashtags`; tool MCP `definir_link_afiliado`. No frontend, `components/CampaignCard.jsx` mostra cada campanha com fluxo manual de link: botão "Gerar link" (abre `affiliate.shopee.com.br/offer/custom_link` em nova aba) + "Copiar URL do produto" + campo pra colar o link gerado. Fluxo 100% manual, sem automação (ver decisão sobre Shopee abaixo)

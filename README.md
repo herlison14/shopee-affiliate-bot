@@ -55,8 +55,10 @@ Variáveis de ambiente a configurar no dashboard do Render: `SECRET_KEY`, `ANTHR
 
 ### Frontend (Vercel)
 
-- Root directory: `frontend`
+- **App em produção**: https://frontend-chi-blond-wwm5qsco37.vercel.app
+- **Root Directory: `frontend`** — configuração no **painel da Vercel** (Settings → Build and Deployment → Root Directory). ⚠️ **Obrigatório e fácil de esquecer**: se ficar na raiz do repo, a Vercel detecta o bot Python antigo (`requirements.txt` da raiz), instala `pandas`/`streamlit`/etc. e o build falha com `vite build ... exit 127` (`vite: not found`), mesmo com o `npm run build` passando localmente.
 - Framework: Vite
+- `installCommand: npm install --include=dev` (no `frontend/vercel.json`) — garante as devDependencies no build.
 - Variável: `VITE_API_URL=https://shopee-viral-api.onrender.com/api/v1`
 
 ## Estrutura

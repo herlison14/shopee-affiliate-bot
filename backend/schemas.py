@@ -84,6 +84,7 @@ class CampaignEdit(BaseModel):
     """Campos editaveis de uma campanha existente. Todos opcionais: so o que vier
     preenchido e atualizado (PATCH parcial)."""
 
+    product_url: str | None = Field(default=None, min_length=1, max_length=2000)
     affiliate_link: str | None = Field(default=None, max_length=2000)
     caption: str | None = Field(default=None, max_length=5000)
     hashtags: str | None = Field(default=None, max_length=2000)

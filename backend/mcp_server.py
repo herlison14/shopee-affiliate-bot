@@ -192,6 +192,30 @@ async def definir_link_afiliado(ctx: Context, campaign_id: str, link_afiliado: s
 
 
 @mcp.tool()
+async def definir_url_produto(ctx: Context, campaign_id: str, url_produto: str) -> dict:
+    """Troca a URL do produto de uma campanha existente (ex: consertar uma que nasceu
+    com link de oferta temporario). A URL e normalizada pra forma canonica e o aviso
+    de URL instavel e recalculado. Mantem legenda, hashtags e link de afiliado."""
+    user = await _get_user(ctx)
+    product_url = normalize_product_url(url_produto)
+    url_estavel = is_stable_product_url(product_url)
+    async with database.AsyncSessionLocal() as db:
+        result = await db.execute(
+            select(Campaign).where(Campaign.id == campaign_id, Campaign.user_id == user.id)
+        )
+        campaign = result.scalar_one_or_none()
+        if not campaign:
+            return {"erro": "Campanha nao encontrada"}
+        campaign.product_url = product_url
+        campaign.status_detail = None if url_estavel else UNSTABLE_URL_WARNING
+        await db.commit()
+        resultado = {"id": campaign.id, "url_produto": campaign.product_url}
+        if not url_estavel:
+            resultado["aviso"] = UNSTABLE_URL_WARNING
+        return resultado
+
+
+@mcp.tool()
 async def remover_campanha(ctx: Context, campaign_id: str) -> dict:
     """Remove uma campanha de afiliado pelo ID."""
     user = await _get_user(ctx)

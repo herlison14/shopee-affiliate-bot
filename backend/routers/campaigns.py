@@ -18,6 +18,11 @@ from schemas import (
 )
 from security import get_current_user
 from services.ai_service import generate_caption_and_hashtags
+from services.shopee_url import (
+    UNSTABLE_URL_WARNING,
+    is_stable_product_url,
+    normalize_product_url,
+)
 
 router = APIRouter(prefix="/api/v1/campaigns", tags=["campaigns"])
 
@@ -49,15 +54,21 @@ async def create_campaign(
     if scheduled_for is not None and scheduled_for.tzinfo is not None:
         scheduled_for = scheduled_for.astimezone(timezone.utc).replace(tzinfo=None)
 
+    # URL de oferta/temporaria expira: normaliza pra forma canonica quando da e
+    # sinaliza (status_detail) quando a URL nao fixa um produto estavel.
+    product_url = normalize_product_url(payload.product_url)
+    status_detail = None if is_stable_product_url(product_url) else UNSTABLE_URL_WARNING
+
     campaign = Campaign(
         user_id=current_user.id,
         product_name=payload.product_name,
-        product_url=payload.product_url,
+        product_url=product_url,
         affiliate_link=payload.affiliate_link,
         caption=caption,
         hashtags=hashtags,
         status="scheduled" if scheduled_for else "draft",
         scheduled_for=scheduled_for,
+        status_detail=status_detail,
     )
     db.add(campaign)
     await db.commit()
@@ -83,20 +94,24 @@ async def create_campaigns_bulk(
     ignoradas = 0
     urls_neste_lote = set()
     for item in payload.items:
-        if item.product_url in urls_existentes or item.product_url in urls_neste_lote:
+        # Normaliza antes do dedup: URLs diferentes do mesmo produto (slug vs
+        # /product/...) viram a mesma forma canonica e sao deduplicadas juntas.
+        product_url = normalize_product_url(item.product_url)
+        if product_url in urls_existentes or product_url in urls_neste_lote:
             ignoradas += 1
             continue
-        urls_neste_lote.add(item.product_url)
+        urls_neste_lote.add(product_url)
 
         caption, hashtags = await generate_caption_and_hashtags(item.product_name)
         campaign = Campaign(
             user_id=current_user.id,
             product_name=item.product_name,
-            product_url=item.product_url,
+            product_url=product_url,
             affiliate_link=item.affiliate_link,
             caption=caption,
             hashtags=hashtags,
             status="draft",
+            status_detail=None if is_stable_product_url(product_url) else UNSTABLE_URL_WARNING,
         )
         db.add(campaign)
         criadas.append(campaign)

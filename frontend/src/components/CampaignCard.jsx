@@ -44,7 +44,7 @@ export default function CampaignCard({ campaign, onDelete, onUpdateLink }) {
         <div className="min-w-0 flex-1">
           <p className="font-medium">{campaign.product_name}</p>
           <p className="text-sm text-gray-600">{campaign.caption}</p>
-          <p className="text-xs text-gray-400">{campaign.hashtags}</p>
+          <p className="text-xs text-gray-500">{campaign.hashtags}</p>
           <div className="mt-1 flex flex-wrap items-center gap-2">
             <span className={`inline-block rounded px-2 py-0.5 text-xs ${status.cls}`}>{status.text}</span>
             {campaign.affiliate_link && !editing && (
@@ -57,7 +57,7 @@ export default function CampaignCard({ campaign, onDelete, onUpdateLink }) {
             <p className="mt-1 text-xs text-amber-600">{campaign.status_detail}</p>
           )}
         </div>
-        <button onClick={() => onDelete(campaign.id)} className="shrink-0 text-xs text-red-500 hover:underline">
+        <button onClick={() => onDelete(campaign.id)} className="shrink-0 text-xs text-red-600 hover:underline">
           Remover
         </button>
       </div>
@@ -69,7 +69,7 @@ export default function CampaignCard({ campaign, onDelete, onUpdateLink }) {
               href={campaign.affiliate_link}
               target="_blank"
               rel="noopener noreferrer"
-              className="truncate text-xs text-shopee hover:underline"
+              className="truncate text-xs text-shopee-dark hover:underline"
             >
               {campaign.affiliate_link}
             </a>
@@ -114,7 +114,7 @@ export default function CampaignCard({ campaign, onDelete, onUpdateLink }) {
               <button
                 onClick={handleSaveLink}
                 disabled={saving || !linkValue.trim()}
-                className="whitespace-nowrap rounded-lg bg-shopee px-3 py-2 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50"
+                className="whitespace-nowrap rounded-lg bg-shopee-dark px-3 py-2 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50"
               >
                 {saving ? 'Salvando...' : saved ? 'Salvo!' : 'Salvar link'}
               </button>

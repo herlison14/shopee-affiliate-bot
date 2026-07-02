@@ -150,7 +150,7 @@ export default function ImportProducts({ onImported }) {
         </div>
       </div>
 
-      {error && <p className="mb-3 text-sm text-red-500">{error}</p>}
+      {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
 
       {preview.length > 0 && (
         <div className="mb-3 max-h-40 overflow-y-auto rounded-lg border">
@@ -183,7 +183,7 @@ export default function ImportProducts({ onImported }) {
       <button
         onClick={handleImport}
         disabled={importing || preview.length === 0}
-        className="rounded-lg bg-shopee px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
+        className="rounded-lg bg-shopee-dark px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
       >
         {importing ? 'Criando campanhas com IA...' : `Importar ${preview.length || ''} produto(s)`}
       </button>

@@ -34,7 +34,7 @@ export default function LandingPage() {
       </header>
 
       <main className="mx-auto max-w-3xl px-4 pb-20 pt-10 text-center px-safe sm:px-6">
-        <span className="mb-4 inline-block rounded-full bg-orange-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-shopee">
+        <span className="mb-4 inline-block rounded-full bg-orange-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-shopee-dark">
           Plataforma de IA para afiliados Shopee
         </span>
         <h1 className="mb-4 text-3xl font-extrabold leading-tight text-gray-900 sm:text-5xl">
@@ -47,7 +47,7 @@ export default function LandingPage() {
         <div className="flex justify-center gap-3">
           <Link
             to="/login"
-            className="rounded-lg bg-shopee px-6 py-3 text-sm font-semibold text-white hover:opacity-90"
+            className="rounded-lg bg-shopee-dark px-6 py-3 text-sm font-semibold text-white hover:opacity-90"
           >
             Começar agora →
           </Link>

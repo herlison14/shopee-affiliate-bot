@@ -8,6 +8,11 @@ from models.campaign import Campaign
 from models.commission import Commission
 from models.user import User
 from services.ai_service import generate_caption_and_hashtags
+from services.shopee_url import (
+    UNSTABLE_URL_WARNING,
+    is_stable_product_url,
+    normalize_product_url,
+)
 
 mcp = FastMCP(
     "ShopeeViral.AI",
@@ -84,26 +89,36 @@ async def criar_campanha(
     user = await _get_user(ctx)
     caption, hashtags = await generate_caption_and_hashtags(nome_produto)
 
+    # URL de oferta/temporaria expira: normaliza pra forma canonica e sinaliza
+    # quando a URL nao fixa um produto estavel.
+    product_url = normalize_product_url(url_produto)
+    url_estavel = is_stable_product_url(product_url)
+
     async with database.AsyncSessionLocal() as db:
         campaign = Campaign(
             user_id=user.id,
             product_name=nome_produto,
-            product_url=url_produto,
+            product_url=product_url,
             affiliate_link=link_afiliado,
             caption=caption,
             hashtags=hashtags,
             status="draft",
+            status_detail=None if url_estavel else UNSTABLE_URL_WARNING,
         )
         db.add(campaign)
         await db.commit()
         await db.refresh(campaign)
-        return {
+        resultado = {
             "id": campaign.id,
             "produto": campaign.product_name,
+            "url_produto": campaign.product_url,
             "legenda": campaign.caption,
             "hashtags": campaign.hashtags,
             "status": campaign.status,
         }
+        if not url_estavel:
+            resultado["aviso"] = UNSTABLE_URL_WARNING
+        return resultado
 
 
 @mcp.tool()

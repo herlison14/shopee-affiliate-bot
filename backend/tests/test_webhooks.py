@@ -32,17 +32,29 @@ async def _create_campaign(db) -> Campaign:
     return campaign
 
 
-async def test_webhook_without_secret_configured_accepts_any_request(client):
+async def test_webhook_without_secret_rejects_unsigned_by_default(client):
+    # Fail-closed: sem SHOPEE_CONSUMER_SECRET e sem opt-in, request nao-assinado e rejeitado.
     async with database.AsyncSessionLocal() as db:
         campaign = await _create_campaign(db)
 
     payload = {"campaign_id": campaign.id, "order_id": "PED-001", "sale_amount": 100.0}
     resp = await client.post("/api/v1/webhooks/shopee/sale", json=payload)
+    assert resp.status_code == 401
+
+
+async def test_webhook_accepts_unsigned_when_explicitly_opted_in(client, monkeypatch):
+    monkeypatch.setattr(settings, "WEBHOOK_ALLOW_UNSIGNED", True)
+    async with database.AsyncSessionLocal() as db:
+        campaign = await _create_campaign(db)
+
+    payload = {"campaign_id": campaign.id, "order_id": "PED-001B", "sale_amount": 100.0}
+    resp = await client.post("/api/v1/webhooks/shopee/sale", json=payload)
     assert resp.status_code == 201
     assert resp.json()["status"] == "pending"
 
 
-async def test_webhook_is_idempotent_on_repeated_order_id(client):
+async def test_webhook_is_idempotent_on_repeated_order_id(client, monkeypatch):
+    monkeypatch.setattr(settings, "WEBHOOK_ALLOW_UNSIGNED", True)
     async with database.AsyncSessionLocal() as db:
         campaign = await _create_campaign(db)
 

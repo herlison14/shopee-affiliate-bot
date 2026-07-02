@@ -2,6 +2,18 @@
 
 Checklist a seguir **antes de todo commit/push** em `backend/` ou `frontend/`. Baseado em bugs reais que já passaram batido (conflitos de dependência só visíveis no Python 3.11 do Render, bcrypt incompatível, JSX em arquivo `.js`, timestamps timezone-aware vs naive).
 
+> **CI**: `.github/workflows/ci.yml` roda os testes do backend e o build do frontend em
+> todo push/PR pra `main`. Este checklist continua valendo localmente (o CI é a rede de
+> segurança, não substitui rodar antes de subir).
+
+## Segurança (produção)
+
+- **`SECRET_KEY`**: setar no Render. Com `ENVIRONMENT=production`, a app **recusa subir**
+  se a `SECRET_KEY` estiver com o default (guard em `config.py`) — sem isso, JWT é forjável.
+- **`FRONTEND_URL`**: setar no Render com a URL de produção do frontend (senão o CORS bloqueia).
+- **Webhook de venda**: fail-closed. Sem `SHOPEE_CONSUMER_SECRET`, requests não-assinados são
+  rejeitados; `WEBHOOK_ALLOW_UNSIGNED=true` libera só em dev/teste.
+
 ## Backend (`backend/`)
 
 1. **Sintaxe**: `python -m py_compile <arquivos alterados>` antes de qualquer coisa.

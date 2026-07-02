@@ -178,12 +178,12 @@ export default function DashboardPage() {
             <button
               type="submit"
               disabled={submitting}
-              className="rounded-lg bg-shopee px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 sm:col-span-3"
+              className="rounded-lg bg-shopee-dark px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 sm:col-span-3"
             >
               {submitting ? 'Gerando legenda com IA...' : 'Criar campanha'}
             </button>
           </form>
-          {formError && <p className="mt-2 text-sm text-red-500">{formError}</p>}
+          {formError && <p className="mt-2 text-sm text-red-600">{formError}</p>}
         </section>
 
         <ImportProducts onImported={bulkImport} />
@@ -195,7 +195,7 @@ export default function DashboardPage() {
             pedir por conversa: criar campanhas, listar e consultar comissões.
           </p>
           {mcpLoading && <p className="text-sm text-gray-500">Carregando...</p>}
-          {mcpError && <p className="text-sm text-red-500">{mcpError}</p>}
+          {mcpError && <p className="text-sm text-red-600">{mcpError}</p>}
           {mcpUrl && (
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <input
@@ -209,7 +209,7 @@ export default function DashboardPage() {
               <div className="flex gap-2">
                 <button
                   onClick={handleCopy}
-                  className="whitespace-nowrap rounded-lg bg-shopee px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+                  className="whitespace-nowrap rounded-lg bg-shopee-dark px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
                 >
                   {copied ? 'Copiado!' : 'Copiar'}
                 </button>
@@ -233,7 +233,7 @@ export default function DashboardPage() {
             seguidores.
           </p>
           {storefrontLoading && <p className="text-sm text-gray-500">Carregando...</p>}
-          {storefrontError && <p className="text-sm text-red-500">{storefrontError}</p>}
+          {storefrontError && <p className="text-sm text-red-600">{storefrontError}</p>}
           {storefrontSettings && (
             <>
               <form onSubmit={handleSaveStorefront} className="mb-3 grid gap-3 sm:grid-cols-2">
@@ -255,7 +255,7 @@ export default function DashboardPage() {
                 <button
                   type="submit"
                   disabled={savingStorefront}
-                  className="rounded-lg bg-shopee px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 sm:col-span-2"
+                  className="rounded-lg bg-shopee-dark px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 sm:col-span-2"
                 >
                   {savingStorefront ? 'Salvando...' : 'Salvar'}
                 </button>
@@ -279,7 +279,7 @@ export default function DashboardPage() {
                   href={storefrontSettings.storefront_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="whitespace-nowrap rounded-lg bg-shopee px-4 py-2 text-center text-sm font-semibold text-white hover:opacity-90"
+                  className="whitespace-nowrap rounded-lg bg-shopee-dark px-4 py-2 text-center text-sm font-semibold text-white hover:opacity-90"
                 >
                   Ver vitrine
                 </a>
@@ -307,7 +307,7 @@ export default function DashboardPage() {
             — sem você precisar pedir.
           </p>
           {agentLoading && <p className="text-sm text-gray-500">Carregando...</p>}
-          {agentError && <p className="text-sm text-red-500">{agentError}</p>}
+          {agentError && <p className="text-sm text-red-600">{agentError}</p>}
           {!agentLoading && agentActions.length === 0 && (
             <p className="text-sm text-gray-500">
               James ainda não tomou nenhuma ação — ele revisa suas campanhas periodicamente.
@@ -320,7 +320,7 @@ export default function DashboardPage() {
                   {a.action_type}
                 </span>
                 <span className="text-gray-700">{a.description}</span>
-                <p className="mt-1 text-xs text-gray-400">
+                <p className="mt-1 text-xs text-gray-500">
                   {new Date(a.created_at).toLocaleString('pt-BR')}
                 </p>
               </li>
@@ -331,7 +331,7 @@ export default function DashboardPage() {
         <section className="rounded-xl bg-white p-5 shadow-sm sm:p-6">
           <h2 className="mb-4 text-lg font-semibold">Campanhas</h2>
           {loading && <p className="text-sm text-gray-500">Carregando...</p>}
-          {error && <p className="text-sm text-red-500">{error}</p>}
+          {error && <p className="text-sm text-red-600">{error}</p>}
           {!loading && campaigns.length === 0 && (
             <p className="text-sm text-gray-500">Nenhuma campanha criada ainda.</p>
           )}

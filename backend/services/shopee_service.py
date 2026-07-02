@@ -52,10 +52,12 @@ def verify_push_signature(url: str, raw_body: bytes, signature: str | None) -> b
 
     A Shopee assina o payload como HMAC-SHA256("{url}|{body}", partner_key) e envia
     o resultado (hex) no header Authorization. Enquanto SHOPEE_CONSUMER_SECRET nao
-    estiver configurado (app ainda nao aprovado), a validacao e pulada.
+    estiver configurado (app ainda nao aprovado), o webhook e fail-closed: rejeita
+    requests nao-assinados (a menos que WEBHOOK_ALLOW_UNSIGNED esteja ligado, so em
+    dev/teste), senao qualquer um poderia forjar vendas e inflar comissoes.
     """
     if not settings.SHOPEE_CONSUMER_SECRET:
-        return True
+        return settings.WEBHOOK_ALLOW_UNSIGNED
 
     if not signature:
         return False

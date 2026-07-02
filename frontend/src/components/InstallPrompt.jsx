@@ -32,7 +32,7 @@ export default function InstallPrompt() {
             </p>
             <button
               onClick={promptInstall}
-              className="mt-2 rounded-lg bg-shopee px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+              className="mt-2 rounded-lg bg-shopee-dark px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
             >
               Instalar app
             </button>
@@ -48,7 +48,7 @@ export default function InstallPrompt() {
       <button
         onClick={dismiss}
         aria-label="Dispensar"
-        className="shrink-0 rounded p-1 text-gray-400 hover:text-gray-600"
+        className="shrink-0 rounded p-1 text-gray-500 hover:text-gray-600"
       >
         ✕
       </button>

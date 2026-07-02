@@ -10,12 +10,25 @@ const STATUS_LABELS = {
 
 const SHOPEE_CUSTOM_LINK_URL = 'https://affiliate.shopee.com.br/offer/custom_link'
 
-export default function CampaignCard({ campaign, onDelete, onUpdateLink }) {
+export default function CampaignCard({ campaign, onDelete, onUpdateLink, onUpdateProductUrl }) {
   const [linkValue, setLinkValue] = useState(campaign.affiliate_link || '')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [editing, setEditing] = useState(!campaign.affiliate_link)
   const [copiedUrl, setCopiedUrl] = useState(false)
+  const [urlValue, setUrlValue] = useState('')
+  const [savingUrl, setSavingUrl] = useState(false)
+
+  const handleFixUrl = async () => {
+    if (!urlValue.trim()) return
+    setSavingUrl(true)
+    try {
+      await onUpdateProductUrl(campaign.id, urlValue.trim())
+      setUrlValue('')
+    } finally {
+      setSavingUrl(false)
+    }
+  }
 
   const handleCopyProductUrl = async () => {
     await navigator.clipboard.writeText(campaign.product_url)
@@ -54,7 +67,28 @@ export default function CampaignCard({ campaign, onDelete, onUpdateLink }) {
             )}
           </div>
           {campaign.status_detail && (
-            <p className="mt-1 text-xs text-amber-600">{campaign.status_detail}</p>
+            <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-2">
+              <p className="text-xs text-amber-700">{campaign.status_detail}</p>
+              {onUpdateProductUrl && (
+                <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+                  <input
+                    type="url"
+                    aria-label="Corrigir URL do produto"
+                    placeholder="Cole a URL do produto: shopee.com.br/...-i.LOJA.ITEM"
+                    value={urlValue}
+                    onChange={(e) => setUrlValue(e.target.value)}
+                    className="flex-1 rounded-lg border px-3 py-2 text-xs"
+                  />
+                  <button
+                    onClick={handleFixUrl}
+                    disabled={savingUrl || !urlValue.trim()}
+                    className="whitespace-nowrap rounded-lg bg-shopee-dark px-3 py-2 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50"
+                  >
+                    {savingUrl ? 'Corrigindo...' : 'Corrigir URL'}
+                  </button>
+                </div>
+              )}
+            </div>
           )}
         </div>
         <button onClick={() => onDelete(campaign.id)} className="shrink-0 text-xs text-red-600 hover:underline">

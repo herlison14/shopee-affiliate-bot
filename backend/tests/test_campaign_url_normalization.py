@@ -43,6 +43,59 @@ async def test_campanha_com_url_canonica_e_normalizada_sem_aviso(client):
     assert data["status_detail"] is None
 
 
+async def test_editar_product_url_conserta_aviso_e_normaliza(client):
+    token = await _register_and_login(client, "consertar@example.com")
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # nasce com link de oferta -> vem sinalizada
+    resp = await client.post(
+        "/api/v1/campaigns",
+        json={
+            "product_name": "Produto pra consertar",
+            "product_url": "https://shopee.com.br/offer/product_offer/23798128210",
+        },
+        headers=headers,
+    )
+    campaign_id = resp.json()["id"]
+    assert resp.json()["status_detail"] is not None
+    caption_original = resp.json()["caption"]
+
+    # troca pela URL canonica -> aviso some, URL normalizada, legenda preservada
+    resp = await client.patch(
+        f"/api/v1/campaigns/{campaign_id}",
+        json={"product_url": "https://shopee.com.br/Nome-i.123456.789012"},
+        headers=headers,
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["product_url"] == "https://shopee.com.br/product/123456/789012"
+    assert data["status_detail"] is None
+    assert data["caption"] == caption_original
+
+
+async def test_editar_so_caption_nao_mexe_na_url_nem_no_aviso(client):
+    token = await _register_and_login(client, "socaption@example.com")
+    headers = {"Authorization": f"Bearer {token}"}
+    resp = await client.post(
+        "/api/v1/campaigns",
+        json={
+            "product_name": "P",
+            "product_url": "https://shopee.com.br/offer/product_offer/999",
+        },
+        headers=headers,
+    )
+    campaign_id = resp.json()["id"]
+
+    resp = await client.patch(
+        f"/api/v1/campaigns/{campaign_id}",
+        json={"caption": "nova legenda"},
+        headers=headers,
+    )
+    data = resp.json()
+    assert data["product_url"] == "https://shopee.com.br/offer/product_offer/999"
+    assert data["status_detail"] is not None  # aviso continua
+
+
 async def test_bulk_dedup_por_url_canonica(client):
     token = await _register_and_login(client, "bulk@example.com")
     # Mesmo produto em dois formatos diferentes -> deve criar so 1 (dedup canonico).

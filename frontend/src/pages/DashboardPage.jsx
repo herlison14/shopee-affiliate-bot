@@ -17,6 +17,7 @@ export default function DashboardPage() {
     createCampaign,
     deleteCampaign,
     updateAffiliateLink,
+    updateProductUrl,
     bulkImport,
   } = useCampaigns()
   const { mcpUrl, loading: mcpLoading, error: mcpError, regenerate } = useMcpUrl()
@@ -342,6 +343,7 @@ export default function DashboardPage() {
                 campaign={c}
                 onDelete={deleteCampaign}
                 onUpdateLink={updateAffiliateLink}
+                onUpdateProductUrl={updateProductUrl}
               />
             ))}
           </ul>

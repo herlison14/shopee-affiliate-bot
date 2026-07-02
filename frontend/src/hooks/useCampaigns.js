@@ -40,6 +40,12 @@ export function useCampaigns() {
     return data
   }
 
+  const updateProductUrl = async (id, productUrl) => {
+    const { data } = await api.patch(`/campaigns/${id}`, { product_url: productUrl })
+    setCampaigns((prev) => prev.map((c) => (c.id === id ? data : c)))
+    return data
+  }
+
   const bulkImport = async (items) => {
     const { data } = await api.post('/campaigns/bulk', { items })
     if (data.campaigns?.length) {
@@ -56,6 +62,7 @@ export function useCampaigns() {
     createCampaign,
     deleteCampaign,
     updateAffiliateLink,
+    updateProductUrl,
     bulkImport,
   }
 }

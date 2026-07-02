@@ -143,8 +143,11 @@ async def edit_campaign(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Edita campos de uma campanha existente (link de afiliado, legenda, hashtags).
-    PATCH parcial: so altera os campos que vierem no corpo da requisicao."""
+    """Edita campos de uma campanha existente (URL do produto, link de afiliado,
+    legenda, hashtags). PATCH parcial: so altera os campos que vierem no corpo.
+    Ao trocar a product_url, ela e normalizada e o aviso de URL instavel
+    (status_detail) e recalculado -- permite consertar uma campanha que nasceu
+    com link de oferta sem perder a legenda/hashtags ja geradas."""
     result = await db.execute(
         select(Campaign).where(Campaign.id == campaign_id, Campaign.user_id == current_user.id)
     )
@@ -153,6 +156,11 @@ async def edit_campaign(
         raise HTTPException(status_code=404, detail="Campanha não encontrada")
 
     changes = payload.model_dump(exclude_unset=True)
+    if "product_url" in changes:
+        product_url = normalize_product_url(changes["product_url"])
+        changes["product_url"] = product_url
+        # recalcula o aviso: some se a URL nova for estavel, aparece se ainda for instavel
+        campaign.status_detail = None if is_stable_product_url(product_url) else UNSTABLE_URL_WARNING
     for field, value in changes.items():
         setattr(campaign, field, value)
 

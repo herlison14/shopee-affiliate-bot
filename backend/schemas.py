@@ -6,7 +6,7 @@ from pydantic import BaseModel, EmailStr, Field
 class UserCreate(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8, max_length=72)
-    full_name: str | None = None
+    full_name: str | None = Field(default=None, max_length=255)
 
 
 class UserLogin(BaseModel):
@@ -30,20 +30,22 @@ class Token(BaseModel):
 
 
 class CampaignCreate(BaseModel):
-    product_name: str
-    product_url: str
-    affiliate_link: str | None = None
+    product_name: str = Field(min_length=1, max_length=300)
+    product_url: str = Field(min_length=1, max_length=2000)
+    affiliate_link: str | None = Field(default=None, max_length=2000)
     scheduled_for: datetime | None = None
 
 
 class CampaignBulkItem(BaseModel):
-    product_name: str
-    product_url: str
-    affiliate_link: str | None = None
+    product_name: str = Field(min_length=1, max_length=300)
+    product_url: str = Field(min_length=1, max_length=2000)
+    affiliate_link: str | None = Field(default=None, max_length=2000)
 
 
 class CampaignBulkCreate(BaseModel):
-    items: list[CampaignBulkItem]
+    # Limite defensivo: cada item dispara uma chamada de IA (custo). Sem teto,
+    # um unico request poderia disparar milhares de chamadas ao Anthropic.
+    items: list[CampaignBulkItem] = Field(min_length=1, max_length=100)
 
 
 class CampaignOut(BaseModel):
@@ -82,9 +84,9 @@ class CampaignEdit(BaseModel):
     """Campos editaveis de uma campanha existente. Todos opcionais: so o que vier
     preenchido e atualizado (PATCH parcial)."""
 
-    affiliate_link: str | None = None
-    caption: str | None = None
-    hashtags: str | None = None
+    affiliate_link: str | None = Field(default=None, max_length=2000)
+    caption: str | None = Field(default=None, max_length=5000)
+    hashtags: str | None = Field(default=None, max_length=2000)
 
 
 class CommissionWebhook(BaseModel):

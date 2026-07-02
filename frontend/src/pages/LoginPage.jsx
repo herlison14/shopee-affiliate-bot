@@ -32,7 +32,7 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-sm rounded-xl bg-white p-8 shadow">
+      <main className="w-full max-w-sm rounded-xl bg-white p-8 shadow">
         <h1 className="mb-1 text-2xl font-bold text-shopee">ShopeeViral.AI</h1>
         <p className="mb-6 text-sm text-gray-500">
           {isRegister ? 'Crie sua conta gratuita' : 'Entre na sua conta'}
@@ -88,7 +88,7 @@ export default function LoginPage() {
         >
           {isRegister ? 'Já tem conta? Entrar' : 'Não tem conta? Cadastre-se'}
         </button>
-      </div>
+      </main>
     </div>
   )
 }

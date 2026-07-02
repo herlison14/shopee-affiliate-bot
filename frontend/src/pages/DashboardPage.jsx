@@ -201,6 +201,7 @@ export default function DashboardPage() {
               <input
                 type="text"
                 readOnly
+                aria-label="URL de conexão com a IA (MCP)"
                 value={mcpUrl}
                 onFocus={(e) => e.target.select()}
                 className="flex-1 rounded-lg border bg-gray-50 px-3 py-2 text-xs text-gray-700 sm:text-sm"
@@ -263,6 +264,7 @@ export default function DashboardPage() {
                 <input
                   type="text"
                   readOnly
+                  aria-label="URL da sua vitrine pública"
                   value={storefrontSettings.storefront_url}
                   onFocus={(e) => e.target.select()}
                   className="flex-1 rounded-lg border bg-gray-50 px-3 py-2 text-xs text-gray-700 sm:text-sm"

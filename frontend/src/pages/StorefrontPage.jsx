@@ -36,6 +36,12 @@ const STYLE = `
     0%, 100% { transform: translateY(0) rotate(0deg); }
     50% { transform: translateY(-18px) rotate(12deg); }
   }
+  .sf-main {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
   .sf-badge-top {
     position: relative;
     z-index: 1;
@@ -188,41 +194,43 @@ export default function StorefrontPage() {
     <>
       <style>{STYLE}</style>
       <div className="storefront-page sf-page">
-        <span className="sf-sparkle" style={{ top: '8%', left: '8%' }}>✨</span>
-        <span className="sf-sparkle" style={{ top: '18%', right: '10%', fontSize: 16 }}>💖</span>
-        <span className="sf-sparkle" style={{ top: '60%', left: '5%', fontSize: 28 }}>🌸</span>
-        <span className="sf-sparkle" style={{ top: '75%', right: '8%' }}>✨</span>
-        <span className="sf-sparkle" style={{ top: '40%', right: '4%', fontSize: 14 }}>💎</span>
+        <span className="sf-sparkle" aria-hidden="true" style={{ top: '8%', left: '8%' }}>✨</span>
+        <span className="sf-sparkle" aria-hidden="true" style={{ top: '18%', right: '10%', fontSize: 16 }}>💖</span>
+        <span className="sf-sparkle" aria-hidden="true" style={{ top: '60%', left: '5%', fontSize: 28 }}>🌸</span>
+        <span className="sf-sparkle" aria-hidden="true" style={{ top: '75%', right: '8%' }}>✨</span>
+        <span className="sf-sparkle" aria-hidden="true" style={{ top: '40%', right: '4%', fontSize: 14 }}>💎</span>
 
-        <div className="sf-badge-top">✨ CURADORIA ATUALIZADA</div>
+        <main className="sf-main">
+          <div className="sf-badge-top">✨ CURADORIA ATUALIZADA</div>
 
-        <div className="sf-avatar-ring">
-          <div className="sf-avatar">🛍️</div>
-        </div>
+          <div className="sf-avatar-ring" aria-hidden="true">
+            <div className="sf-avatar">🛍️</div>
+          </div>
 
-        <h1>{data.storefront_name}</h1>
-        {data.storefront_bio && <p className="sf-bio">{data.storefront_bio}</p>}
+          <h1>{data.storefront_name}</h1>
+          {data.storefront_bio && <p className="sf-bio">{data.storefront_bio}</p>}
 
-        <div className="sf-links">
-          {data.campaigns.map((c, i) => (
-            <a
-              key={i}
-              className="sf-link-card"
-              href={c.affiliate_link}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ animationDelay: `${0.05 + i * 0.05}s` }}
-            >
-              <span className="sf-icon">🛍️</span>
-              <span className="sf-label">{c.product_name}</span>
-              {c.featured && <span className="sf-tag">MAIS VENDIDO</span>}
-            </a>
-          ))}
-        </div>
+          <div className="sf-links">
+            {data.campaigns.map((c, i) => (
+              <a
+                key={i}
+                className="sf-link-card"
+                href={c.affiliate_link}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ animationDelay: `${0.05 + i * 0.05}s` }}
+              >
+                <span className="sf-icon" aria-hidden="true">🛍️</span>
+                <span className="sf-label">{c.product_name}</span>
+                {c.featured && <span className="sf-tag">MAIS VENDIDO</span>}
+              </a>
+            ))}
+          </div>
 
-        {data.campaigns.length === 0 && (
-          <p className="sf-empty">Nenhum produto disponível por aqui ainda — volte em breve!</p>
-        )}
+          {data.campaigns.length === 0 && (
+            <p className="sf-empty">Nenhum produto disponível por aqui ainda — volte em breve!</p>
+          )}
+        </main>
 
         <footer className="sf-footer">
           Feito com 💕 via ShopeeViral.AI

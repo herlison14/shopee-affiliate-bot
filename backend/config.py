@@ -5,11 +5,18 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     # App
+    ENVIRONMENT: str = "development"  # setar "production" no Render (ativa o guard do SECRET_KEY)
     DEBUG: bool = False
     LOG_LEVEL: str = "INFO"
     SECRET_KEY: str = "change-me-in-production"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7
+
+    # Webhooks
+    # Por padrao o webhook de venda e fail-closed: se SHOPEE_CONSUMER_SECRET nao
+    # estiver configurado, requests nao-assinados sao REJEITADOS (senao qualquer
+    # um poderia forjar vendas). So habilite isto em ambiente de teste/dev.
+    WEBHOOK_ALLOW_UNSIGNED: bool = False
 
     # Database
     DATABASE_URL: str = "postgresql+asyncpg://postgres:password@localhost:5432/shopee_viral_saas"
@@ -47,3 +54,18 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+# Fail-closed: nunca rodar em producao com a SECRET_KEY default (JWT forjavel).
+# So dispara quando ENVIRONMENT=production (setado no Render); em dev/teste
+# apenas avisa, sem derrubar a app.
+if settings.SECRET_KEY == "change-me-in-production":
+    if settings.ENVIRONMENT == "production":
+        raise RuntimeError(
+            "SECRET_KEY nao configurada em producao (esta com o default inseguro). "
+            "Defina SECRET_KEY nas variaveis de ambiente antes de subir."
+        )
+    import logging
+
+    logging.getLogger("shopeeviral").warning(
+        "SECRET_KEY esta com o valor default -- OK em dev, mas NUNCA suba assim em producao."
+    )

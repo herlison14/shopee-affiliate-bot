@@ -34,7 +34,13 @@ Publicação de campanhas no feed do Instagram via **API oficial** (Instagram Gr
 4. Botão "Postar no Instagram" no `CampaignCard` — aparece quando a **conta está conectada** e a campanha tem **`image_url`**.
 5. `POST /api/v1/instagram/campaigns/{id}/publish` → em sucesso, `status="posted"` + `posted_url`; em falha, `status="needs_review"` + `status_detail`.
 
-**Pré-requisitos (do usuário)**: conta Instagram Profissional/Business vinculada a uma Página do Facebook; app no Meta for Developers (tipo Business) com Facebook Login + Instagram Graph API e **App Review** dos scopes `instagram_basic` + `instagram_content_publish`; token de longa duração (60 dias); IG Business Account ID (via `GET /me/accounts` → página → `instagram_business_account`). **Só publica de fato após a App Review da Meta.**
+**Pré-requisitos (do usuário)**: conta Instagram Profissional/Business vinculada a uma Página do Facebook; app no Meta for Developers **tipo Business** (⚠️ **não** "Consumer" — Consumer não libera `instagram_content_publish`) com Facebook Login + Instagram Graph API; scopes `instagram_basic` + `instagram_content_publish`; token de longa duração (60 dias); IG Business Account ID.
+
+**Pegadinhas do setup no Meta** (erros que já custaram tempo — não repetir):
+- **App Review NÃO é pré-requisito pra testar.** Com a **própria conta** (admin/tester do app), publica em **modo Desenvolvimento sem App Review**. A App Review (`instagram_content_publish` + verificação de negócio, ~dias) só serve pra liberar a publicação pra **outros** usuários.
+- **IG Business Account ID** não fica em "Settings → Basic". Pega no **Graph API Explorer**: `GET /me/accounts` → id da Página → `GET /{page-id}?fields=instagram_business_account` → o `id` retornado.
+- **Token de longa duração**: trocar o curto em `graph.facebook.com/v21.0/oauth/access_token?grant_type=fb_exchange_token&client_id=APP_ID&client_secret=APP_SECRET&fb_exchange_token=CURTO` — **não** `graph.instagram.com` (Basic Display, host errado).
+- **`INSTAGRAM_APP_ID`/`INSTAGRAM_APP_SECRET` no Render são opcionais** pro fluxo atual: o `/connect` só valida o token colado (`get_account_info`), não lê essas envs. Servem só pra um futuro refresh automático de token.
 
 **Banco** (migrations): `0008` (do main) adiciona `users.instagram_access_token`/`instagram_user_id`/`instagram_token_expires_at`; `0009` adiciona `campaigns.image_url`.
 

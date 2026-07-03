@@ -32,6 +32,13 @@ class Settings(BaseSettings):
     # AI
     ANTHROPIC_API_KEY: str = ""
 
+    # Instagram (Graph API - Content Publishing). Content publishing usa
+    # graph.facebook.com com o IG Business Account ID vinculado a uma Pagina do FB
+    # (NAO graph.instagram.com, que e a Basic Display API e nao publica).
+    INSTAGRAM_APP_ID: str = ""
+    INSTAGRAM_APP_SECRET: str = ""
+    INSTAGRAM_GRAPH_API_BASE: str = "https://graph.facebook.com/v21.0"
+
     # Payments
     STRIPE_API_KEY: str = ""
     STRIPE_WEBHOOK_SECRET: str = ""

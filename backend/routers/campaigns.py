@@ -64,6 +64,7 @@ async def create_campaign(
         product_name=payload.product_name,
         product_url=product_url,
         affiliate_link=payload.affiliate_link,
+        image_url=payload.image_url,
         caption=caption,
         hashtags=hashtags,
         status="scheduled" if scheduled_for else "draft",

@@ -16,6 +16,7 @@ class Campaign(Base):
     product_name: Mapped[str] = mapped_column(String(255), nullable=False)
     product_url: Mapped[str] = mapped_column(String(1024), nullable=False)
     affiliate_link: Mapped[str] = mapped_column(String(1024), nullable=True)
+    image_url: Mapped[str] = mapped_column(String(1024), nullable=True)  # exigida pra postar no feed do Instagram
 
     caption: Mapped[str] = mapped_column(Text, nullable=True)
     hashtags: Mapped[str] = mapped_column(Text, nullable=True)

@@ -24,6 +24,11 @@ class User(Base):
 
     mcp_token: Mapped[str] = mapped_column(String(64), unique=True, nullable=True, index=True)
 
+    # Instagram (Graph API - Content Publishing). Token de longa duracao por usuario.
+    instagram_access_token: Mapped[str] = mapped_column(String(512), nullable=True)
+    instagram_user_id: Mapped[str] = mapped_column(String(128), nullable=True)  # IG Business Account ID
+    instagram_token_expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     agent_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)

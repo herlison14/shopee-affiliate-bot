@@ -21,6 +21,25 @@ SaaS para afiliados Shopee: gera campanhas com legenda/hashtags via IA (Claude),
 - **Acessibilidade (WCAG 2.1 AA)**: auditado com axe-core via Playwright (script em scratchpad, não versionado). Corrigido: `aria-label` nos inputs readonly (URL MCP e da vitrine) no dashboard, landmark `<main>` no `LoginPage` e na `StorefrontPage` (+ `.sf-main` flex pra manter o layout central), headings das features da landing `h3`→`h2` (ordem), sparkles/ícones decorativos da vitrine com `aria-hidden`. **Contraste**: cor `shopee-dark` #cc3a17 no `tailwind.config.js` pra superfícies sólidas com texto branco pequeno (botões) e badges/links de texto pequeno — passa no AA; o `shopee` #ee4d2d fica só nos títulos grandes/acentos (que passam no AA em texto grande). `text-gray-400`→`gray-500` e `text-red-500`→`red-600` nos textos secundários. **Resultado: axe-core reporta 0 violações nas 4 telas.**
 - **Antes de comitar**: seguir o checklist em [CONTRIBUTING.md](./CONTRIBUTING.md) — testes do backend, build do frontend, validação pós-deploy
 
+### Integração Instagram (publicação automática de campanhas)
+
+Publicação de campanhas no feed do Instagram via **API oficial** (Instagram Graph API — Content Publishing). Sem automação de navegador — alinhado à decisão de só usar APIs oficiais.
+
+**Stack**: FastAPI + React/Vite + Graph API no host `graph.facebook.com/v21.0` (configurável via env `INSTAGRAM_GRAPH_API_BASE`). **Não** `graph.instagram.com` (Basic Display, não publica). Fluxo oficial de 2 passos: `POST /{ig_user_id}/media` (cria o container com `image_url` + `caption`) → `POST /{ig_user_id}/media_publish` (publica).
+
+**Fluxo do usuário**:
+1. Dashboard → seção "Instagram" (`components/InstagramSection.jsx`) → colar **token de longa duração** + **IG Business Account ID**.
+2. Backend valida com `GET /{ig_user_id}` (`services/instagram_service.get_account_info`) e guarda no `User`.
+3. Criar/editar campanha com `image_url` (obrigatória pra publicar — o feed exige mídia; o usuário fornece a URL da imagem manualmente).
+4. Botão "Postar no Instagram" no `CampaignCard` — aparece quando a **conta está conectada** e a campanha tem **`image_url`**.
+5. `POST /api/v1/instagram/campaigns/{id}/publish` → em sucesso, `status="posted"` + `posted_url`; em falha, `status="needs_review"` + `status_detail`.
+
+**Pré-requisitos (do usuário)**: conta Instagram Profissional/Business vinculada a uma Página do Facebook; app no Meta for Developers (tipo Business) com Facebook Login + Instagram Graph API e **App Review** dos scopes `instagram_basic` + `instagram_content_publish`; token de longa duração (60 dias); IG Business Account ID (via `GET /me/accounts` → página → `instagram_business_account`). **Só publica de fato após a App Review da Meta.**
+
+**Banco** (migrations): `0008` (do main) adiciona `users.instagram_access_token`/`instagram_user_id`/`instagram_token_expires_at`; `0009` adiciona `campaigns.image_url`.
+
+**API** (`routers/instagram.py`, protegidos por `get_current_user`): `POST /api/v1/instagram/connect`, `GET /api/v1/instagram/status`, `POST /api/v1/instagram/campaigns/{id}/publish`. **MCP**: tool `postar_no_instagram(campaign_id)`.
+
 ### Importante: automação de navegador no site da Shopee é proibitiva
 
 A Shopee detecta automação de navegador (Playwright/CDP, extensões de automação) mesmo com

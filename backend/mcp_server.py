@@ -7,7 +7,9 @@ from models.agent_action import AgentAction
 from models.campaign import Campaign
 from models.commission import Commission
 from models.user import User
+from services import instagram_service
 from services.ai_service import generate_caption_and_hashtags
+from services.instagram_service import InstagramError
 from services.shopee_url import (
     UNSTABLE_URL_WARNING,
     is_stable_product_url,
@@ -213,6 +215,39 @@ async def definir_url_produto(ctx: Context, campaign_id: str, url_produto: str) 
         if not url_estavel:
             resultado["aviso"] = UNSTABLE_URL_WARNING
         return resultado
+
+
+@mcp.tool()
+async def postar_no_instagram(ctx: Context, campaign_id: str) -> dict:
+    """Publica uma campanha no feed do Instagram (foto + legenda) via API oficial.
+    Requer a conta do Instagram conectada e a campanha com image_url preenchida."""
+    user = await _get_user(ctx)
+    async with database.AsyncSessionLocal() as db:
+        result = await db.execute(
+            select(Campaign).where(Campaign.id == campaign_id, Campaign.user_id == user.id)
+        )
+        campaign = result.scalar_one_or_none()
+        if not campaign:
+            return {"erro": "Campanha nao encontrada"}
+        if not user.instagram_access_token:
+            return {"erro": "Conta Instagram nao conectada."}
+        if not campaign.image_url:
+            return {"erro": "Campanha sem imagem: adicione uma image_url para postar no Instagram."}
+
+        caption = instagram_service.build_caption(campaign.caption, campaign.hashtags)
+        try:
+            pub = await instagram_service.publish_photo(user, campaign.image_url, caption)
+        except InstagramError as exc:
+            campaign.status = "needs_review"
+            campaign.status_detail = f"Falha ao publicar no Instagram: {exc}"
+            await db.commit()
+            return {"erro": str(exc)}
+
+        campaign.status = "posted"
+        campaign.posted_url = pub["posted_url"]
+        campaign.status_detail = None
+        await db.commit()
+        return {"id": campaign.id, "status": campaign.status, "posted_url": pub["posted_url"]}
 
 
 @mcp.tool()

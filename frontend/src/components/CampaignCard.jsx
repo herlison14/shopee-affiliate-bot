@@ -10,7 +10,31 @@ const STATUS_LABELS = {
 
 const SHOPEE_CUSTOM_LINK_URL = 'https://affiliate.shopee.com.br/offer/custom_link'
 
-export default function CampaignCard({ campaign, onDelete, onUpdateLink, onUpdateProductUrl }) {
+export default function CampaignCard({
+  campaign,
+  onDelete,
+  onUpdateLink,
+  onUpdateProductUrl,
+  instagramConnected,
+  onPublishInstagram,
+}) {
+  const [publishing, setPublishing] = useState(false)
+  const [publishError, setPublishError] = useState(null)
+  const [publishedUrl, setPublishedUrl] = useState(campaign.posted_url || null)
+
+  const handlePublishInstagram = async () => {
+    setPublishing(true)
+    setPublishError(null)
+    try {
+      const data = await onPublishInstagram(campaign.id)
+      setPublishedUrl(data.posted_url)
+    } catch (err) {
+      setPublishError(err.response?.data?.detail || 'Falha ao publicar')
+    } finally {
+      setPublishing(false)
+    }
+  }
+
   const [linkValue, setLinkValue] = useState(campaign.affiliate_link || '')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -156,6 +180,34 @@ export default function CampaignCard({ campaign, onDelete, onUpdateLink, onUpdat
           </div>
         )}
       </div>
+
+      {instagramConnected && (
+        <div className="mt-3 flex flex-wrap items-center gap-3 border-t pt-3">
+          {publishedUrl ? (
+            <a
+              href={publishedUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs font-semibold text-green-700 hover:underline"
+            >
+              ✓ Publicado no Instagram — ver post
+            </a>
+          ) : campaign.image_url ? (
+            <button
+              onClick={handlePublishInstagram}
+              disabled={publishing}
+              className="whitespace-nowrap rounded-lg bg-shopee-dark px-3 py-2 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50"
+            >
+              {publishing ? 'Publicando...' : 'Postar no Instagram'}
+            </button>
+          ) : (
+            <p className="text-xs text-gray-500">
+              Adicione uma imagem à campanha pra poder postar no Instagram.
+            </p>
+          )}
+          {publishError && <span className="text-xs text-red-600">{publishError}</span>}
+        </div>
+      )}
     </li>
   )
 }

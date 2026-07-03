@@ -4,9 +4,11 @@ import { useCampaigns } from '../hooks/useCampaigns'
 import { useMcpUrl } from '../hooks/useMcpUrl'
 import { useAgentActions } from '../hooks/useAgentActions'
 import { useStorefront } from '../hooks/useStorefront'
+import { useInstagram } from '../hooks/useInstagram'
 import CampaignCard from '../components/CampaignCard'
 import ImportProducts from '../components/ImportProducts'
 import InstallPrompt from '../components/InstallPrompt'
+import InstagramSection from '../components/InstagramSection'
 
 export default function DashboardPage() {
   const { user, logout } = useAuth()
@@ -27,6 +29,7 @@ export default function DashboardPage() {
     error: storefrontError,
     updateSettings: updateStorefrontSettings,
   } = useStorefront()
+  const instagram = useInstagram()
   const [storefrontName, setStorefrontName] = useState('')
   const [storefrontBio, setStorefrontBio] = useState('')
   const [savingStorefront, setSavingStorefront] = useState(false)
@@ -95,6 +98,7 @@ export default function DashboardPage() {
   const [productName, setProductName] = useState('')
   const [productUrl, setProductUrl] = useState('')
   const [affiliateLink, setAffiliateLink] = useState('')
+  const [imageUrl, setImageUrl] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState(null)
 
@@ -107,10 +111,12 @@ export default function DashboardPage() {
         product_name: productName,
         product_url: productUrl,
         affiliate_link: affiliateLink || null,
+        image_url: imageUrl || null,
       })
       setProductName('')
       setProductUrl('')
       setAffiliateLink('')
+      setImageUrl('')
     } catch (err) {
       setFormError(err.response?.data?.detail || 'Erro ao criar campanha')
     } finally {
@@ -176,6 +182,13 @@ export default function DashboardPage() {
               onChange={(e) => setAffiliateLink(e.target.value)}
               className="rounded-lg border px-3 py-2 text-sm sm:col-span-1"
             />
+            <input
+              type="url"
+              placeholder="URL da imagem do produto (opcional — usada pra postar no Instagram)"
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
+              className="rounded-lg border px-3 py-2 text-sm sm:col-span-3"
+            />
             <button
               type="submit"
               disabled={submitting}
@@ -188,6 +201,8 @@ export default function DashboardPage() {
         </section>
 
         <ImportProducts onImported={bulkImport} />
+
+        <InstagramSection instagram={instagram} />
 
         <section className="mb-8 rounded-xl bg-white p-5 shadow-sm sm:p-6">
           <h2 className="mb-1 text-lg font-semibold">Conectar com IA</h2>
@@ -344,6 +359,8 @@ export default function DashboardPage() {
                 onDelete={deleteCampaign}
                 onUpdateLink={updateAffiliateLink}
                 onUpdateProductUrl={updateProductUrl}
+                instagramConnected={instagram.connected}
+                onPublishInstagram={instagram.publish}
               />
             ))}
           </ul>

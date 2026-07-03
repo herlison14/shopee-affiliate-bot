@@ -33,6 +33,7 @@ class CampaignCreate(BaseModel):
     product_name: str = Field(min_length=1, max_length=300)
     product_url: str = Field(min_length=1, max_length=2000)
     affiliate_link: str | None = Field(default=None, max_length=2000)
+    image_url: str | None = Field(default=None, max_length=1024)
     scheduled_for: datetime | None = None
 
 
@@ -53,6 +54,7 @@ class CampaignOut(BaseModel):
     product_name: str
     product_url: str
     affiliate_link: str | None
+    image_url: str | None = None
     caption: str | None
     hashtags: str | None
     status: str
@@ -86,6 +88,7 @@ class CampaignEdit(BaseModel):
 
     product_url: str | None = Field(default=None, min_length=1, max_length=2000)
     affiliate_link: str | None = Field(default=None, max_length=2000)
+    image_url: str | None = Field(default=None, max_length=1024)
     caption: str | None = Field(default=None, max_length=5000)
     hashtags: str | None = Field(default=None, max_length=2000)
 
@@ -124,6 +127,17 @@ class StorefrontSettingsOut(BaseModel):
 class StorefrontSettingsUpdate(BaseModel):
     storefront_name: str = Field(min_length=1, max_length=255)
     storefront_bio: str | None = Field(default=None, max_length=500)
+
+
+class InstagramConnect(BaseModel):
+    access_token: str = Field(min_length=1, max_length=512)
+    instagram_user_id: str = Field(min_length=1, max_length=128)
+
+
+class InstagramStatusOut(BaseModel):
+    connected: bool
+    username: str | None = None
+    detail: str | None = None
 
 
 class StorefrontCampaignOut(BaseModel):

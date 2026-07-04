@@ -143,6 +143,7 @@ class InstagramStatusOut(BaseModel):
 class StorefrontCampaignOut(BaseModel):
     product_name: str
     affiliate_link: str
+    image_url: str | None = None
     featured: bool
 
 

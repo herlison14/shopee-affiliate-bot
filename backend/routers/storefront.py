@@ -74,6 +74,7 @@ async def get_public_storefront(user_id: str, db: AsyncSession = Depends(get_db)
             StorefrontCampaignOut(
                 product_name=c.product_name,
                 affiliate_link=c.affiliate_link,
+                image_url=c.image_url,
                 featured=has_sale is not None,
             )
         )

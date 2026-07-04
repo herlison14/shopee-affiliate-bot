@@ -18,7 +18,14 @@ class InMemoryRateLimiter:
         self._hits: dict[str, list[float]] = defaultdict(list)
 
     def __call__(self, request: Request) -> None:
-        client_ip = request.client.host if request.client else "unknown"
+        # Atras do proxy do Render, request.client.host e o IP do proxy -- todos
+        # os usuarios cairiam no mesmo balde. O IP real do cliente vem no
+        # X-Forwarded-For (primeiro item). Fallback pro peer quando nao ha proxy.
+        forwarded = request.headers.get("x-forwarded-for")
+        if forwarded:
+            client_ip = forwarded.split(",")[0].strip()
+        else:
+            client_ip = request.client.host if request.client else "unknown"
         now = time.monotonic()
         window_start = now - self.window_seconds
 

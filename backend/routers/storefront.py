@@ -80,7 +80,9 @@ async def get_public_storefront(user_id: str, db: AsyncSession = Depends(get_db)
         )
 
     return StorefrontOut(
-        storefront_name=user.storefront_name or user.full_name or "Minha Vitrine",
+        # Nao expor o full_name do usuario publicamente (privacidade): se ele nao
+        # definiu um nome de vitrine, cai no generico em vez do nome real.
+        storefront_name=user.storefront_name or "Minha Vitrine",
         storefront_bio=user.storefront_bio,
         campaigns=campanhas_out,
     )

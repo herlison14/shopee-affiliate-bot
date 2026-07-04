@@ -70,3 +70,21 @@ async def test_public_storefront_only_shows_ready_campaigns(client):
 async def test_public_storefront_404_for_unknown_user(client):
     resp = await client.get("/api/v1/public/storefront/usuario-inexistente")
     assert resp.status_code == 404
+
+
+async def test_public_storefront_nao_expoe_full_name(client):
+    # Usuario com nome real mas sem storefront_name definido: a vitrine publica
+    # NAO pode expor o full_name (privacidade) -- cai no generico.
+    await client.post(
+        "/api/v1/auth/register",
+        json={"email": "privacidade@example.com", "password": "senha123456", "full_name": "João da Silva"},
+    )
+    login = await client.post(
+        "/api/v1/auth/login", data={"username": "privacidade@example.com", "password": "senha123456"}
+    )
+    headers = {"Authorization": f"Bearer {login.json()['access_token']}"}
+    user_id = (await client.get("/api/v1/auth/me", headers=headers)).json()["id"]
+
+    body = (await client.get(f"/api/v1/public/storefront/{user_id}")).json()
+    assert body["storefront_name"] == "Minha Vitrine"
+    assert "João" not in body["storefront_name"]

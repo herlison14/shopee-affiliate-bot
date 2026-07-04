@@ -13,6 +13,9 @@ Checklist a seguir **antes de todo commit/push** em `backend/` ou `frontend/`. B
 - **`FRONTEND_URL`**: setar no Render com a URL de produção do frontend (senão o CORS bloqueia).
 - **Webhook de venda**: fail-closed. Sem `SHOPEE_CONSUMER_SECRET`, requests não-assinados são
   rejeitados; `WEBHOOK_ALLOW_UNSIGNED=true` libera só em dev/teste.
+- **Rate limiter** (`rate_limit.py`): usa o IP real via `X-Forwarded-For` (atrás do proxy do
+  Render, `request.client.host` seria o IP do proxy — todos os usuários no mesmo balde). Em
+  memória de processo: se escalar pra múltiplas instâncias, migrar pra store compartilhado.
 
 ## Backend (`backend/`)
 

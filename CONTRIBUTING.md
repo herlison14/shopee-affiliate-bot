@@ -6,6 +6,24 @@ Checklist a seguir **antes de todo commit/push** em `backend/` ou `frontend/`. B
 > todo push/PR pra `main`. Este checklist continua valendo localmente (o CI é a rede de
 > segurança, não substitui rodar antes de subir).
 
+## Variáveis de ambiente (Render — backend)
+
+Referência rápida (defaults em `backend/config.py`):
+
+| Env | Pra quê | Obrigatória? |
+|-----|---------|--------------|
+| `SECRET_KEY` | assinar JWT | **sim em produção** (com `ENVIRONMENT=production` a app recusa subir com o default) |
+| `ENVIRONMENT` | `production` ativa o guard do SECRET_KEY | recomendada |
+| `DATABASE_URL` | Postgres (Render injeta) | sim |
+| `ANTHROPIC_API_KEY` | IA gera legenda/hashtags | sim (senão a criação de campanha falha) |
+| `FRONTEND_URL` | CORS (URL de produção do frontend) | sim |
+| `SHOPEE_CONSUMER_KEY` / `SHOPEE_CONSUMER_SECRET` | OAuth Shopee + assinatura do webhook de venda | opcional até integrar |
+| `WEBHOOK_ALLOW_UNSIGNED` | libera webhook não-assinado | **só dev/teste** |
+| `INSTAGRAM_APP_ID` / `INSTAGRAM_APP_SECRET` | Instagram (refresh futuro de token) | opcional pro fluxo atual |
+| `STRIPE_API_KEY` / `STRIPE_WEBHOOK_SECRET` | pagamentos | opcional |
+
+Frontend (Vercel): `VITE_API_URL=https://shopee-viral-api.onrender.com/api/v1`.
+
 ## Segurança (produção)
 
 - **`SECRET_KEY`**: setar no Render. Com `ENVIRONMENT=production`, a app **recusa subir**

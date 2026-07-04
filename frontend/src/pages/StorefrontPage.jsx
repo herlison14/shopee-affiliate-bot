@@ -134,7 +134,22 @@ const STYLE = `
     background: rgba(255, 255, 255, 0.8);
   }
   .sf-link-card .sf-icon { font-size: 22px; flex-shrink: 0; }
-  .sf-link-card .sf-label { flex: 1; }
+  .sf-thumb {
+    width: 54px;
+    height: 54px;
+    border-radius: 12px;
+    object-fit: cover;
+    flex-shrink: 0;
+    background: rgba(255, 255, 255, 0.6);
+  }
+  .sf-link-card .sf-label { flex: 1; line-height: 1.3; }
+  .sf-cta {
+    flex-shrink: 0;
+    font-size: 18px;
+    color: #ff5e8e;
+    transition: transform 0.2s ease;
+  }
+  .sf-link-card:hover .sf-cta { transform: translateX(3px); }
   .sf-link-card .sf-tag {
     font-size: 10px;
     font-weight: 800;
@@ -220,9 +235,22 @@ export default function StorefrontPage() {
                 rel="noopener noreferrer"
                 style={{ animationDelay: `${0.05 + i * 0.05}s` }}
               >
-                <span className="sf-icon" aria-hidden="true">🛍️</span>
+                {c.image_url ? (
+                  <img
+                  className="sf-thumb"
+                  src={c.image_url}
+                  alt=""
+                  loading="lazy"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none'
+                  }}
+                />
+                ) : (
+                  <span className="sf-icon" aria-hidden="true">🛍️</span>
+                )}
                 <span className="sf-label">{c.product_name}</span>
                 {c.featured && <span className="sf-tag">MAIS VENDIDO</span>}
+                <span className="sf-cta" aria-hidden="true">→</span>
               </a>
             ))}
           </div>
